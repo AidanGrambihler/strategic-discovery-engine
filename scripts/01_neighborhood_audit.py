@@ -11,3 +11,4 @@ data_path = base_path / "data" / "raw" / "locations.csv"
 # Now read the file using the dynamic path
 locations = pd.read_csv(data_path)
 print(f"Successfully loaded {len(locations)} rows from {data_path.name}")
+
