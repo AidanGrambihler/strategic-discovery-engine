@@ -4,3 +4,9 @@
 _build/
 auto_examples/
 gen_api/
+
+
+# Large Data Files
+data/raw/
+data/processed/
+*.geojson

@@ -5,58 +5,53 @@ from pathlib import Path
 # .resolve() ensures we have the full absolute path
 # .parent.parent moves us from 'scripts/' up to the project root
 base_path = Path(__file__).resolve().parent.parent
+data_raw = base_path / "data" / "raw"
 
 # Define file paths
-locations_path = base_path / "data" / "raw" / "locations.csv"
-tech_path = base_path / "data" / "raw" / "tech_survey.csv"
+locations_path = data_raw / "locations.csv"
+geo_path = data_raw / "geography.csv"
+tech_2018_path = data_raw / "tech_survey_2018.csv"
+tech_2023_path = data_raw / "tech_survey_2023.csv"
 
 try:
     # 2. Load the Data
     locations = pd.read_csv(locations_path)
-    tech_survey = pd.read_csv(tech_path)
+    geo = pd.read_csv(geo_path)
+    tech_2018 = pd.read_csv(tech_2018_path, low_memory=False)
+    tech_2023 = pd.read_csv(tech_2023_path, low_memory=False)
 
-    print(f"✅ Successfully loaded {len(locations)} rows from {locations_path.name}")
-    print(f"✅ Successfully loaded {len(tech_survey)} rows from {tech_path.name}")
-    print("-" * 30)
+    # 3. Identify Zip Code columns across both eras
+    # We loop through both to see if the column names changed
+    surveys = {"2018": tech_2018, "2023": tech_2023}
+    for year, df in surveys.items():
+        zip_matches = [c for c in df.columns if 'zip' in c.lower()]
+        print(f"🔍 {year} Tech Survey Potential Zip Columns: {zip_matches}")
 
-    # 3. Audit Neighborhood Names in 'Locations'
-    # We know 'neighborhood' exists here based on SDOT documentation
-    public_life_hoods = sorted(locations['location_neighborhood'].unique().tolist())
-    print(f"Public Life Neighborhoods ({len(public_life_hoods)}):")
-    print(public_life_hoods)
-    print("-" * 30)
+    # 4. The Spatial Bridge Strategy
+    # We have WKT Polygons and 'locations_id' in 'geo' and 'locations_id' in 'locations'
+    print("\n--- SPATIAL BRIDGE PREP ---")
+    if 'polygon' in geo.columns:
+        sample_wkt = str(geo['polygon'].iloc[0])[:60]
+        print(f"✅ Geometry detected in 'polygon' column.")
+        print(f"📍 Sample: {sample_wkt}...")
+    else:
+        print(f"❌ Error: 'polygon' column not found. Available: {geo.columns.tolist()}")
 
-    # 4. Audit 'Tech Survey' Columns
-    # We need to find the column that matches neighborhoods
-    print("Columns in Tech Survey (looking for the 'Bridge' column):")
-    for col in tech_survey.columns:
-        # This highlights columns that likely contain geographic data
-        if any(key in col.lower() for key in ['hood', 'area', 'district', 'puma', 'zip']):
-            print(f"🔍 POTENTIAL MATCH: {col}")
-        else:
-            print(f"  {col}")
+    # 5. Verify the Join Key (location_id)
+        # Check if the IDs in 'locations.csv' exist in 'geography.csv'
+    loc_ids = set(locations['location_id'].unique())
+    geo_ids = set(geo['location_id'].unique())
+    common_ids = loc_ids.intersection(geo_ids)
+
+    print(f"\n--- ID ALIGNMENT CHECK ---")
+    print(f"🔗 Locations with matching geography: {len(common_ids)} / {len(loc_ids)}")
+
+    if len(common_ids) == 0:
+        print("⚠️ Warning: No matching location_ids found between files! Check formatting.")
+    else:
+        print("✅ Ready for Spatial Join.")
 
 except FileNotFoundError as e:
-    print(f"❌ File not found! Check your folder structure: {e}")
+    print(f"❌ File not found! Check names: {e}")
 except Exception as e:
-    print(f"❌ An error occurred: {e}")
-
-# 5. Documenting the Join Key Mismatch
-# ---------------------------------------------------------
-print("\n--- JOIN KEY MISMATCH ANALYSIS ---")
-
-# Identify the specific column we found for Zip Codes
-# (Assuming the column is named 'Zip_Code' or similar)
-tech_zip_col = 'Zip_Code'  # Update this if the name is slightly different!
-
-print(f"Observation: Tech Survey uses '{tech_zip_col}' while Public Life uses 'location_neighborhood'.")
-print(f"Action: A 'Crosswalk' or 'Spatial Join' is required to link these datasets.")
-
-# Let's see the unique Zip Codes we are working with
-available_zips = sorted(tech_survey[tech_zip_col].dropna().unique().tolist())
-print(f"\nUnique Zip Codes in Tech Survey ({len(available_zips)} total):")
-print(available_zips)
-
-# Check if Public Life has ANY hidden Zip info
-potential_geo_cols = [c for c in locations.columns if 'zip' in c.lower() or 'address' in c.lower()]
-print(f"\nChecking Locations for hidden bridge columns: {potential_geo_cols}")
+    print(f"❌ Error: {e}")
