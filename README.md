@@ -1,7 +1,3 @@
-Since you are building a Data Science Portfolio, your README should read like a professional project report, not a template instruction manual.
-
-Replace the entire contents of your current README.md with the following structure. I have tailored this specifically to your Seattle Vitality project:
-
 Seattle Urban Vitality & Digital Equity Index
 An analysis of physical public life and digital infrastructure reliance.
 
