@@ -1,12 +1,6 @@
-*.py[co]
-*~
-*.DS_Store
-_build/
-auto_examples/
-gen_api/
+# Ignore the giant file that breaks GitHub
+data/raw/seattle_zip_codes.geojson
 
-
-# Large Data Files
-data/raw/
-data/processed/
-*.geojson
+# But track everything else in data
+!data/raw/
+!data/processed/
