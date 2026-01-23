@@ -1,0 +1,7 @@
+"agency_id","study_id","study_title","study_project","study_start_date","study_end_date","study_protocol_version","study_scale","study_notes"
+"SDOT","2018_Seattle_Citywide","Seattle Citywide","Initial citywide study","2018 Jul 14 12:00:00 AM","2018 Sep 22 12:00:00 AM","BETA","city",
+"SDOT","2019_University_District","University District",,"2019 Jan 05 12:00:00 AM","2019 Jan 10 12:00:00 AM","BETA","neighborhood",
+"SDOT","2019_Yesler_Crescent","Yesler Crescent","Yesler Cresecent Action Plan","2019 May 22 12:00:00 AM","2019 Jul 11 12:00:00 AM","BETA","neighborhood",
+"SDOT","2020_Oct_COVID_St_Permits","Public Life in Seattle during COVID-19","Initial study of newly permitted spaces in response to COVID-19","2020 Sep 19 12:00:00 AM","2020 Oct 02 12:00:00 AM","BETA","city",
+"SDOT","2022_McGraw_Square","Public Life in McGraw Square 2022","Collect public life data to inform design process to better understand the function of McGraw Square today and compare to pre-pandemic data in winter 2019.","2022 Jan 08 12:00:00 AM","2022 Jan 13 12:00:00 AM","BETA","single site",
+"SDOT","2022_Ballard_Ave","Ballard Ave NW study","Collect public life data to understand usage and the effectiveness of public space intervention and to inform Ballard Ave design charette.","2022 Aug 27 12:00:00 AM","2022 Sep 01 12:00:00 AM","BETA","block scale",
