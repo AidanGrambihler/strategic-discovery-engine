@@ -110,7 +110,57 @@ def process_surveys():
 
     print(f"✅ Master File Ready! Rows: {len(master_df)}")
     print(f"Ethnicity Check: {master_df['ethnicity_group'].unique()[:5]}")
+def process_surveys():
+    print("💎 Polishing Master Dataset: Applying Labels & Harmonizing Scales...")
 
+    # --- 2023 ---
+    df_23 = pd.read_csv(raw_path / "tech_survey_2023.csv", low_memory=False)
+    df_23['survey_year'] = 2023
+    df_23['zip_code'] = df_23['ZIPCode'].apply(clean_zip)
+    df_23['has_home_internet'] = df_23['Q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
+    df_23['device_count_owned'] = pd.to_numeric(df_23['Q4OwnSum'], errors='coerce').fillna(0).astype(int)
+
+    df_23['reliability_score'] = pd.to_numeric(df_23['Q6'], errors='coerce').replace({6: 6, 7: 7})
+    df_23['reliability_desc'] = df_23['reliability_score'].map(reliability_map)
+    df_23['income_group'] = pd.to_numeric(df_23['INCOME'], errors='coerce').map(income_map)
+    df_23['ethnicity_group'] = pd.to_numeric(df_23['Ethnicity'], errors='coerce').map(eth_map_2023)
+    df_23['usage_locations'] = df_23.apply(get_usage_locations_2023, axis=1)
+
+    # --- 2018 ---
+    df_18 = pd.read_csv(raw_path / "tech_survey_2018.csv", low_memory=False)
+    df_18['survey_year'] = 2018
+    df_18['zip_code'] = df_18['qzip'].apply(clean_zip)
+    df_18['has_home_internet'] = df_18['q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
+    df_18['device_count_owned'] = pd.to_numeric(df_18['q2bOwnSum'], errors='coerce').fillna(0).astype(int)
+
+    df_18['reliability_score'] = pd.to_numeric(df_18['q6'], errors='coerce').replace({8: 6, 9: 6, 0: 7})
+    df_18['reliability_desc'] = df_18['reliability_score'].map(reliability_map)
+    df_18['income_group'] = pd.to_numeric(df_18['INCOME'], errors='coerce').map(income_map)
+    df_18['ethnicity_group'] = pd.to_numeric(df_18['ethnicity'], errors='coerce').map(eth_map_2018)
+    df_18['usage_locations'] = df_18.apply(get_usage_locations_2018, axis=1)
+
+    # --- Combine & Order ---
+    initial_cols = ['zip_code', 'survey_year', 'has_home_internet', 'device_count_owned',
+                    'reliability_score', 'reliability_desc', 'usage_locations',
+                    'income_group', 'ethnicity_group']
+
+    master_df = pd.concat([df_18[initial_cols], df_23[initial_cols]], ignore_index=True)
+
+    # --- NEW: Calculate Respondent Counts per Zip/Year ---
+    # This adds a column telling us how many people from that zip responded in that year
+    print("📊 Calculating neighborhood sample sizes...")
+    master_df['zip_respondent_count'] = master_df.groupby(['zip_code', 'survey_year'])['zip_code'].transform('count')
+
+    # Re-order to include the new column
+    final_cols = initial_cols + ['zip_respondent_count']
+    master_df = master_df[final_cols]
+
+    # Save
+    processed_path.mkdir(parents=True, exist_ok=True)
+    master_df.to_csv(processed_path / "standardized_tech_surveys.csv", index=False)
+
+    print(f"✅ Master File Ready! Rows: {len(master_df)}")
+    print(f"Sample Count (98101, 2023): {master_df[(master_df['zip_code']=='98101') & (master_df['survey_year']==2023)]['zip_respondent_count'].iloc[0] if not master_df.empty else 'N/A'}")
 
 if __name__ == "__main__":
     process_surveys()

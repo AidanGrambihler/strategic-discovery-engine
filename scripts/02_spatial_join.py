@@ -9,6 +9,15 @@ raw_path = base_path / "data" / "raw"
 processed_path = base_path / "data" / "processed"
 processed_path.mkdir(exist_ok=True)
 
+# DOCUMENTATION: Manual Zip Code mapping for sites missing spatial metadata
+# Logic: BLT = Belltown (Downtown Seattle), OTH = Other, PIK = Pike/Pine, PIO = Pioneer Square.
+PATCH_MAP = {
+    "BLT5": "98121",
+    "OTH3": "98118",
+    "PIK5": "98122",
+    "PIO19": "98104"
+}
+
 try:
     # 2. Load Data
     print("📂 Loading study geography and zip code boundaries...")
@@ -44,12 +53,28 @@ try:
     final_lookup = joined[['location_id', zip_col]].copy()
     final_lookup.columns = ['location_id', 'zip_code']
 
-    # 6. Save the Crosswalk
+    # 6. Append Manual Patches and Save
+    # We use the string names to match the format of the spatial join results
+    manual_rows = pd.DataFrame([
+        {'location_id': 'BLT5', 'zip_code': '98121'},
+        {'location_id': 'OTH3', 'zip_code': '98118'},
+        {'location_id': 'PIK5', 'zip_code': '98122'},
+        {'location_id': 'PIO19', 'zip_code': '98104'}
+    ])
+
+    # Combine them
+    final_lookup = pd.concat([final_lookup, manual_rows], ignore_index=True)
+
+    # Ensure everything is a string and clean up formatting
+    final_lookup['location_id'] = final_lookup['location_id'].astype(str)
+    final_lookup['zip_code'] = final_lookup['zip_code'].astype(str).str.replace('\.0$', '', regex=True)
+
+    # Save the Crosswalk
     output_path = processed_path / "location_to_zip_crosswalk.csv"
     final_lookup.to_csv(output_path, index=False)
 
-    print(f"✅ Success! Created crosswalk for {len(final_lookup)} locations.")
-    print(f"📍 Sample Mapping:\n{final_lookup.head()}")
+    print(f"✅ Success! Created crosswalk with {len(final_lookup)} locations.")
+    print(f"📍 Patched rows added:\n{final_lookup.tail(5)}")
 
 except Exception as e:
     print(f"❌ Error during spatial join: {e}")

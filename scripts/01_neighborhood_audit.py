@@ -51,6 +51,31 @@ try:
     else:
         print("✅ Ready for Spatial Join.")
 
+    # Find IDs that exist in locations but NOT in geography
+    missing_ids = loc_ids - geo_ids
+
+    print(f"❌ Found {len(missing_ids)} locations without spatial data: {missing_ids}")
+
+    # Look up their names to see if they are important
+    missing_info = locations[locations['location_id'].isin(missing_ids)]
+    print("\n--- Details of Missing Locations ---")
+    print(missing_info[['location_id']])
+
+    # Check how much data these missing sites actually hold
+    missing_names = ["BLT5", "BLT6", "OTH3", "PIK5", "PIO19"]
+    df_staying = pd.read_csv(data_raw / "staying.csv", low_memory=False)
+
+    # Check if these strings appear in the location_id column
+    # We convert the column to string first to be safe
+    impact_by_name = df_staying[df_staying['location_id'].astype(str).isin(missing_names)]
+
+    print("📊 Data loss check by NAME:")
+    if impact_by_name.empty:
+        print("✅ Confirmed: Even searching by name, these 5 sites have 0 observations.")
+    else:
+        print(f"⚠️ Found {len(impact_by_name)} observations using string names!")
+        print(impact_by_name.groupby('location_id').size())
+
 except FileNotFoundError as e:
     print(f"❌ File not found! Check names: {e}")
 except Exception as e:

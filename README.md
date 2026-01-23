@@ -55,6 +55,17 @@ We have completed the **Longitudinal Survey Pipeline**. This involved bridging t
    - Merging "Street Vitality" (SDOT Observation Data) with "Digital Equity" (Survey Data).
    - Mapping SDOT observation sites to ZIP-level survey insights.
 
+## 📊 Data Audit & Longitudinal Strategy
+Before finalizing the master merge, a pre-flight audit (`scripts/00_data_audit.py`) was implemented to verify temporal coverage. While the "Staying" observations are robust across both study years, the "Moving" (pedestrian flow) data showed a significant decline in the 2023 cycle:
+
+| Dataset | 2018 Observations | 2023 Observations |
+| :--- | :---: | :---: |
+| **Staying** (Behavior) | 6,537 | 4,512 |
+| **Moving** (Flow) | 1,728 | 0* |
+*\*Note: Only 99 Moving observations were recorded in 2022, with none in 2023.*
+
+**Methodological Pivot:** To maintain longitudinal rigor for the "Option A" strategy, this project utilizes the **Digital-to-Social Ratio (DSR)** as the primary dependent variable. This allows for a direct comparison of public space *intent* (Utility vs. Social interaction) without the bias of inconsistent pedestrian flow counts.
+
 ## 🚀 Getting Started
 1. **Data Placement:** Place `tech_survey_2023.csv`, `tech_survey_2018.csv`, and `staying.csv` in `data/raw/`.
 2. **References:** See the `references/` folder for the original City of Seattle codebooks used for mapping.
