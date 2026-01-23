@@ -36,5 +36,28 @@ Bash
 pip install -r requirements.txt
 Data Placement: Ensure the raw Seattle Open Data CSV files are placed in data/raw/.
 
-🧪 Current Status: Data Engineering
-Currently performing a Many-to-One Join between the 17,000+ observation rows and the 132 unique location sites to create a "Vitality Master Table."
+## 🧪 Current Status: Data Harmonization & Engineering
+We have completed the **Longitudinal Survey Pipeline**. This involved bridging two disparate datasets (2018 and 2023 Digital Equity Surveys) into a unified analysis format.
+
+### Key Achievements:
+- **Schema Alignment:** Mapped inconsistent variable names (e.g., `q11a_x` vs `Q10rx`) to a standardized "Human Readable" schema.
+- **Categorical Harmonization:** Unfied the 1-7 Internet Reliability scale and reconciled diverging Ethnicity and Income codes across a 5-year gap.
+- **Feature Engineering:** Developed a scanning algorithm to transform multi-column survey responses into a single, searchable `usage_locations` attribute.
+
+## ⚙️ Data Pipeline
+1. **`scripts/02b_standardize_surveys.py`**:
+   - Cleans and sanitizes ZIP codes (handling numeric/string inconsistencies).
+   - Maps raw numeric survey codes to descriptive categories (Income, Ethnicity, Reliability).
+   - Standardizes reported internet usage locations into a unified string format.
+   - **Output:** `data/processed/standardized_tech_surveys.csv`
+
+2. **`scripts/03_merge_data.py`** (In Progress):
+   - Merging "Street Vitality" (SDOT Observation Data) with "Digital Equity" (Survey Data).
+   - Mapping SDOT observation sites to ZIP-level survey insights.
+
+## 🚀 Getting Started
+1. **Data Placement:** Place `tech_survey_2023.csv`, `tech_survey_2018.csv`, and `staying.csv` in `data/raw/`.
+2. **References:** See the `references/` folder for the original City of Seattle codebooks used for mapping.
+3. **Execution:**
+   ```bash
+   python scripts/02b_standardize_surveys.py
