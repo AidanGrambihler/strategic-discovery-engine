@@ -1,3 +1,7 @@
+*.py[co]
+*~
+*.DS_Store
+
 # Ignore the giant file that breaks GitHub
 data/raw/seattle_zip_codes.geojson
 
