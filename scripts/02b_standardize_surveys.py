@@ -9,10 +9,14 @@ processed_path = base_path / "data" / "processed"
 
 # --- 1. HARMONIZED MAPPING DICTIONARIES ---
 
-# Reliability Scale (Harmonized)
-reliability_map = {
-    1: "Completely Adequate", 2: "Mostly Adequate", 3: "Sometimes Adequate",
-    4: "Rarely Adequate", 5: "Not Adequate", 6: "N/A / No Access", 7: "No Response / Refused"
+# Reliability Scale: INVERTED (5 is Best, 1 is Worst)
+# We map these AFTER the numerical logic in the helper function
+reliability_desc_map = {
+    5: "Completely Adequate",
+    4: "Mostly Adequate",
+    3: "Sometimes Adequate",
+    2: "Rarely Adequate",
+    1: "Not Adequate"
 }
 
 # Income Brackets (Bridging 2018 & 2023)
@@ -21,7 +25,7 @@ income_map = {
     4: "$75k-$99k", 5: "$100k-$149k", 6: "$150k-$199k", 7: "$200k+"
 }
 
-# Ethnicity Maps (YEAR SPECIFIC)
+# Ethnicity Maps
 eth_map_2018 = {
     1: "White", 2: "African American", 3: "Asian",
     4: "NH/PI", 5: "AI/AN", 6: "Hispanic",
@@ -34,7 +38,7 @@ eth_map_2023 = {
     7: "Other", 8: "Mixed", 9: "Refused", 10: "Hispanic"
 }
 
-# Location Legend
+# Location Legend for Usage
 loc_legend = {
     1: "Home", 2: "Work", 3: "School", 4: "Library", 5: "Community Center",
     6: "Religious/Cultural Center", 7: "Friend/Relative Home", 8: "Public Plaza/Airport",
@@ -47,6 +51,35 @@ loc_legend = {
 def clean_zip(z):
     z_str = str(z).replace(',', '').split('.')[0].strip()
     return z_str.zfill(5) if z_str.isdigit() else "00000"
+
+
+def harmonize_reliability(val, year):
+    """
+    Standardizes reliability scores:
+    1. Inverts scale: 1 (best) -> 5, 5 (worst) -> 1
+    2. 2018 (8,9) and 2023 (6) -> np.nan with 'Not Applicable' description
+    3. 2018 (0) and 2023 (7) -> np.nan with 'No Response' description
+    """
+    try:
+        val = int(val)
+    except (ValueError, TypeError):
+        return np.nan, "No Response"
+
+    # Define Special Cases
+    is_na = (year == 2018 and val in [8, 9]) or (year == 2023 and val == 6)
+    is_null = (year == 2018 and val == 0) or (year == 2023 and val == 7)
+
+    if is_na:
+        return np.nan, "Not Applicable"
+    if is_null:
+        return np.nan, "No Response"
+
+    # Core Scale Inversion (1->5, 2->4, 3->3, 4->2, 5->1)
+    if 1 <= val <= 5:
+        inverted_score = 6 - val
+        return inverted_score, reliability_desc_map[inverted_score]
+
+    return np.nan, "No Response"
 
 
 def get_usage_locations_2018(row):
@@ -67,7 +100,7 @@ def get_usage_locations_2023(row):
 # --- 3. MAIN PROCESSING ---
 
 def process_surveys():
-    print("💎 Polishing Master Dataset: Applying Labels & Harmonizing Scales...")
+    print("💎 Harmonizing Surveys: Inverting Reliability Scale (5=Best)...")
 
     # --- 2023 ---
     df_23 = pd.read_csv(raw_path / "tech_survey_2023.csv", low_memory=False)
@@ -76,9 +109,10 @@ def process_surveys():
     df_23['has_home_internet'] = df_23['Q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
     df_23['device_count_owned'] = pd.to_numeric(df_23['Q4OwnSum'], errors='coerce').fillna(0).astype(int)
 
-    # Apply 2023 Specific Maps
-    df_23['reliability_score'] = pd.to_numeric(df_23['Q6'], errors='coerce').replace({6: 6, 7: 7})
-    df_23['reliability_desc'] = df_23['reliability_score'].map(reliability_map)
+    # Reliability Inversion
+    rel_res_23 = df_23['Q6'].apply(lambda x: harmonize_reliability(x, 2023))
+    df_23['reliability_score'], df_23['reliability_desc'] = zip(*rel_res_23)
+
     df_23['income_group'] = pd.to_numeric(df_23['INCOME'], errors='coerce').map(income_map)
     df_23['ethnicity_group'] = pd.to_numeric(df_23['Ethnicity'], errors='coerce').map(eth_map_2023)
     df_23['usage_locations'] = df_23.apply(get_usage_locations_2023, axis=1)
@@ -90,77 +124,34 @@ def process_surveys():
     df_18['has_home_internet'] = df_18['q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
     df_18['device_count_owned'] = pd.to_numeric(df_18['q2bOwnSum'], errors='coerce').fillna(0).astype(int)
 
-    # Apply 2018 Specific Maps
-    df_18['reliability_score'] = pd.to_numeric(df_18['q6'], errors='coerce').replace({8: 6, 9: 6, 0: 7})
-    df_18['reliability_desc'] = df_18['reliability_score'].map(reliability_map)
+    # Reliability Inversion
+    rel_res_18 = df_18['q6'].apply(lambda x: harmonize_reliability(x, 2018))
+    df_18['reliability_score'], df_18['reliability_desc'] = zip(*rel_res_18)
+
     df_18['income_group'] = pd.to_numeric(df_18['INCOME'], errors='coerce').map(income_map)
     df_18['ethnicity_group'] = pd.to_numeric(df_18['ethnicity'], errors='coerce').map(eth_map_2018)
     df_18['usage_locations'] = df_18.apply(get_usage_locations_2018, axis=1)
 
-    # --- Combine & Order ---
-    final_cols = ['zip_code', 'survey_year', 'has_home_internet', 'device_count_owned',
-                  'reliability_score', 'reliability_desc', 'usage_locations',
-                  'income_group', 'ethnicity_group']
-
-    master_df = pd.concat([df_18[final_cols], df_23[final_cols]], ignore_index=True)
-
-    # Save
-    processed_path.mkdir(parents=True, exist_ok=True)
-    master_df.to_csv(processed_path / "standardized_tech_surveys.csv", index=False)
-
-    print(f"✅ Master File Ready! Rows: {len(master_df)}")
-    print(f"Ethnicity Check: {master_df['ethnicity_group'].unique()[:5]}")
-def process_surveys():
-    print("💎 Polishing Master Dataset: Applying Labels & Harmonizing Scales...")
-
-    # --- 2023 ---
-    df_23 = pd.read_csv(raw_path / "tech_survey_2023.csv", low_memory=False)
-    df_23['survey_year'] = 2023
-    df_23['zip_code'] = df_23['ZIPCode'].apply(clean_zip)
-    df_23['has_home_internet'] = df_23['Q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
-    df_23['device_count_owned'] = pd.to_numeric(df_23['Q4OwnSum'], errors='coerce').fillna(0).astype(int)
-
-    df_23['reliability_score'] = pd.to_numeric(df_23['Q6'], errors='coerce').replace({6: 6, 7: 7})
-    df_23['reliability_desc'] = df_23['reliability_score'].map(reliability_map)
-    df_23['income_group'] = pd.to_numeric(df_23['INCOME'], errors='coerce').map(income_map)
-    df_23['ethnicity_group'] = pd.to_numeric(df_23['Ethnicity'], errors='coerce').map(eth_map_2023)
-    df_23['usage_locations'] = df_23.apply(get_usage_locations_2023, axis=1)
-
-    # --- 2018 ---
-    df_18 = pd.read_csv(raw_path / "tech_survey_2018.csv", low_memory=False)
-    df_18['survey_year'] = 2018
-    df_18['zip_code'] = df_18['qzip'].apply(clean_zip)
-    df_18['has_home_internet'] = df_18['q1'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
-    df_18['device_count_owned'] = pd.to_numeric(df_18['q2bOwnSum'], errors='coerce').fillna(0).astype(int)
-
-    df_18['reliability_score'] = pd.to_numeric(df_18['q6'], errors='coerce').replace({8: 6, 9: 6, 0: 7})
-    df_18['reliability_desc'] = df_18['reliability_score'].map(reliability_map)
-    df_18['income_group'] = pd.to_numeric(df_18['INCOME'], errors='coerce').map(income_map)
-    df_18['ethnicity_group'] = pd.to_numeric(df_18['ethnicity'], errors='coerce').map(eth_map_2018)
-    df_18['usage_locations'] = df_18.apply(get_usage_locations_2018, axis=1)
-
-    # --- Combine & Order ---
-    initial_cols = ['zip_code', 'survey_year', 'has_home_internet', 'device_count_owned',
-                    'reliability_score', 'reliability_desc', 'usage_locations',
-                    'income_group', 'ethnicity_group']
+    # --- Combine ---
+    initial_cols = [
+        'zip_code', 'survey_year', 'has_home_internet', 'device_count_owned',
+        'reliability_score', 'reliability_desc', 'usage_locations',
+        'income_group', 'ethnicity_group'
+    ]
 
     master_df = pd.concat([df_18[initial_cols], df_23[initial_cols]], ignore_index=True)
 
-    # --- NEW: Calculate Respondent Counts per Zip/Year ---
-    # This adds a column telling us how many people from that zip responded in that year
+    # --- Sample Sizes ---
     print("📊 Calculating neighborhood sample sizes...")
     master_df['zip_respondent_count'] = master_df.groupby(['zip_code', 'survey_year'])['zip_code'].transform('count')
 
-    # Re-order to include the new column
-    final_cols = initial_cols + ['zip_respondent_count']
-    master_df = master_df[final_cols]
-
-    # Save
+    # Final Save
     processed_path.mkdir(parents=True, exist_ok=True)
     master_df.to_csv(processed_path / "standardized_tech_surveys.csv", index=False)
 
-    print(f"✅ Master File Ready! Rows: {len(master_df)}")
-    print(f"Sample Count (98101, 2023): {master_df[(master_df['zip_code']=='98101') & (master_df['survey_year']==2023)]['zip_respondent_count'].iloc[0] if not master_df.empty else 'N/A'}")
+    print(f"✅ Success! Standardized file saved to {processed_path}")
+    print(f"Total Rows: {len(master_df)}")
+
 
 if __name__ == "__main__":
     process_surveys()
