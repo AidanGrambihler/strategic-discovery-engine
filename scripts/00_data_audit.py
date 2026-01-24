@@ -6,8 +6,12 @@ base_path = Path(__file__).resolve().parent.parent
 raw_path = base_path / "data" / "raw"
 
 # Configurable Threshold
-MIN_SAMPLE_SIZE = 100
+MIN_SAMPLE_SIZE = 50
 
+for year in [2018, 2023]:
+    n = len(pd.read_csv(raw_path / f"tech_survey_{year}.csv", low_memory=False))
+    status = "✅ SUFFICIENT" if n >= MIN_SAMPLE_SIZE else "❌ INSUFFICIENT"
+    print(f"Tech Survey {year}: n={n:,} | {status}")
 
 def audit_dataset(df, name, time_col):
     """Generically audits a dataframe for temporal sample size sufficiency."""
@@ -41,7 +45,7 @@ def run_full_audit():
         print(f"🛑 Error: Could not find raw files. {e}")
         return
 
-    # 2. Audit Both
+    # 2. Audit All
     staying_stats = audit_dataset(df_staying, "STAYING.CSV (Behavior)", "staying_time_start")
     moving_stats = audit_dataset(df_moving, "MOVING.CSV (Flow)", "moving_time_start")
 

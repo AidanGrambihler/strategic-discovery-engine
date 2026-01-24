@@ -9,28 +9,18 @@ raw_path = base_path / "data" / "raw"
 processed_path = base_path / "data" / "processed"
 processed_path.mkdir(exist_ok=True)
 
-# DOCUMENTATION: Manual Zip Code mapping for sites missing spatial metadata
-# Logic: BLT = Belltown (Downtown Seattle), OTH = Other, PIK = Pike/Pine, PIO = Pioneer Square.
-PATCH_MAP = {
-    "BLT5": "98121",
-    "OTH3": "98118",
-    "PIK5": "98122",
-    "PIO19": "98104"
-}
 
 try:
     # 2. Load Data
     print("📂 Loading study geography and zip code boundaries...")
     geo_df = pd.read_csv(raw_path / "geography.csv")
 
-    # Load the GeoJSON you just downloaded
-    zips_gdf = gpd.read_file(raw_path / "seattle_zip_codes.geojson")
+    # Load the trimmed GeoJSON file
+    zips_gdf = gpd.read_file(raw_path / "seattle_zip_codes_trimmed.geojson")
 
-    # 3. Apply your Centroid Logic
-    # First, convert the SDOT WKT strings into actual objects
+    # 3. Calculate the centroid of each study area to ultimately find each associated zip code
+    # First, convert the Seattle Department of Transportation (SDOT) WKT strings into actual objects
     geo_df['geometry'] = geo_df['polygon'].apply(wkt.loads)
-
-    # Calculate the centroid of each study area (your specific approach)
     geo_df['centroid'] = geo_df['geometry'].apply(lambda x: x.centroid)
 
     # Create a GeoDataFrame using the centroids as the active mapping points
@@ -41,7 +31,7 @@ try:
     )
 
     # 4. Local Spatial Join
-    # Instead of an API, we check which Seattle Zip boundary 'contains' each centroid
+    # Check which Seattle Zip boundary 'contains' each centroid
     print("🎯 Mapping centroids to Zip Codes...")
     joined = gpd.sjoin(gdf_centroids, zips_gdf, how="left", predicate="within")
 
@@ -54,7 +44,8 @@ try:
     final_lookup.columns = ['location_id', 'zip_code']
 
     # 6. Append Manual Patches and Save
-    # We use the string names to match the format of the spatial join results
+    # We use the string names to match the format of the spatial join results.
+    # This is for the zip codes not included in geography.csv
     manual_rows = pd.DataFrame([
         {'location_id': 'BLT5', 'zip_code': '98121'},
         {'location_id': 'OTH3', 'zip_code': '98118'},

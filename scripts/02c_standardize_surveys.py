@@ -10,7 +10,6 @@ processed_path = base_path / "data" / "processed"
 # --- 1. HARMONIZED MAPPING DICTIONARIES ---
 
 # Reliability Scale: INVERTED (5 is Best, 1 is Worst)
-# We map these AFTER the numerical logic in the helper function
 reliability_desc_map = {
     5: "Completely Adequate",
     4: "Mostly Adequate",
@@ -44,6 +43,8 @@ loc_legend = {
     6: "Religious/Cultural Center", 7: "Friend/Relative Home", 8: "Public Plaza/Airport",
     9: "Business/Coffee Shop", 10: "Other", 11: "Do Not Use Internet", 12: "N/A"
 }
+
+gender_map_2018 = {1: "Male", 2: "Female", 3: "Non-binary", 0: "No Response", 4: "No Response"}
 
 
 # --- 2. HELPER FUNCTIONS ---
@@ -96,6 +97,11 @@ def get_usage_locations_2023(row):
     found_labels = [loc_legend[i] for i in range(1, 13) if row.get(f'Q10r{i}') == 1]
     return ", ".join(found_labels) if found_labels else "None"
 
+def extract_gender_2023(row):
+    if row.get('Q30r1') == 1: return "Female"
+    if row.get('Q30r2') == 1: return "Male"
+    if row.get('Q30r3') == 1: return "Non-binary"
+    return "No Response"
 
 # --- 3. MAIN PROCESSING ---
 
@@ -116,6 +122,7 @@ def process_surveys():
     df_23['income_group'] = pd.to_numeric(df_23['INCOME'], errors='coerce').map(income_map)
     df_23['ethnicity_group'] = pd.to_numeric(df_23['Ethnicity'], errors='coerce').map(eth_map_2023)
     df_23['usage_locations'] = df_23.apply(get_usage_locations_2023, axis=1)
+    df_23['gender_group'] = df_23.apply(extract_gender_2023, axis=1)
 
     # --- 2018 ---
     df_18 = pd.read_csv(raw_path / "tech_survey_2018.csv", low_memory=False)
@@ -131,12 +138,13 @@ def process_surveys():
     df_18['income_group'] = pd.to_numeric(df_18['INCOME'], errors='coerce').map(income_map)
     df_18['ethnicity_group'] = pd.to_numeric(df_18['ethnicity'], errors='coerce').map(eth_map_2018)
     df_18['usage_locations'] = df_18.apply(get_usage_locations_2018, axis=1)
+    df_18['gender_group'] = pd.to_numeric(df_18['Gender'], errors='coerce').map(gender_map_2018).fillna('No Response')
 
     # --- Combine ---
     initial_cols = [
         'zip_code', 'survey_year', 'has_home_internet', 'device_count_owned',
         'reliability_score', 'reliability_desc', 'usage_locations',
-        'income_group', 'ethnicity_group'
+        'income_group', 'ethnicity_group', 'gender_group'
     ]
 
     master_df = pd.concat([df_18[initial_cols], df_23[initial_cols]], ignore_index=True)

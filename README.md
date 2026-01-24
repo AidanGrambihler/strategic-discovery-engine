@@ -4,6 +4,16 @@ An analysis of physical public life and digital infrastructure reliance.
 📌 Project Overview
 This project investigates the relationship between neighborhood-level digital access and the actual observed behavior of people in public spaces. By anchoring 2023 SDOT Public Life observation data with the Technology Access and Adoption Survey, we aim to identify if public spaces serve as "critical digital hubs" in neighborhoods with low home-broadband adoption.
 
+🎯 Primary Research Question
+Does lower residential internet reliability predict higher digital activity in public spaces, independent of neighborhood income—and has this relationship intensified post-pandemic?
+
+💡 Hypotheses
+H1 (Substitution): Lower home reliability correlates with higher public Digital-to-Social Ratios (DSR).
+
+H2 (Independence): This effect persists even when controlling for median income.
+
+H3 (Intensity): The "Reliability Gap" in public behavior is wider in 2023 than in 2018.
+
 📊 The Data
 Anchor: Seattle Public Life Data (Observations of people staying, moving, and using electronics).
 

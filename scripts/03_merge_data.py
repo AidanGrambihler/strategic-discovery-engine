@@ -26,16 +26,48 @@ def merge_vitality_data():
     df_survey['income_score'] = df_survey['income_group'].map(income_numeric_map)
 
     # 2. AGGREGATE SURVEYS (The "Need" Context)
+    print("📊 Calculating refined equity metrics (Access, Devices, Ethnicity)...")
+
+    # A. Feature Engineering within the Survey Data
+    # Convert 'Yes' to 1 and 'No' to 0
+    df_survey['has_internet_binary'] = (df_survey['has_home_internet'] == 'Yes').astype(int)
+
+    # Convert the comma-separated string into a count of locations
+    # We handle NaNs by filling with an empty string first
+    df_survey['usage_locations_count'] = df_survey['usage_locations'].fillna('').apply(
+        lambda x: len([i for i in x.split(',') if i.strip()]) if x else 0
+    )
+
+    # B. Aggregating Numeric & Access Columns
     zip_equity = df_survey.groupby(['zip_code', 'survey_year']).agg(
         num_survey_respondents=('zip_code', 'count'),
         avg_home_internet_reliability=('reliability_score', 'mean'),
         median_income_bracket=('income_score', 'median'),
+        pct_has_home_internet=('has_internet_binary', lambda x: (x.mean() * 100).round(2)),
+        avg_device_count_owned=('device_count_owned', 'mean'),
+        avg_usage_locations=('usage_locations_count', 'mean'),
         predominant_income_group=('income_group', lambda x: x.mode()[0] if not x.mode().empty else "Unknown"),
     ).reset_index()
 
+    # C. Calculate Demographic Percentages (Ethnicity & Gender)
+    def get_pct_df(df, group_col, prefix):
+        counts = pd.crosstab([df['zip_code'], df['survey_year']], df[group_col])
+        pcts = (counts.div(counts.sum(axis=1), axis=0) * 100)
+        # Clean column names: pct_gen_female, pct_eth_asian, etc.
+        pcts.columns = [f"{prefix}_{str(c).lower().replace(' ', '_').replace('/', '_').replace('-', '_')}" for c in
+                        pcts.columns]
+        return pcts.reset_index()
 
-    # ROUNDING: Keep the home reliability clean for display
-    zip_equity['avg_home_internet_reliability'] = zip_equity['avg_home_internet_reliability'].round(2)
+    eth_pcts = get_pct_df(df_survey, 'ethnicity_group', 'pct_eth')
+    gen_pcts = get_pct_df(df_survey, 'gender_group', 'pct_gen')
+
+    # D. Merge Demographic Percentages back into zip_equity
+    zip_equity = pd.merge(zip_equity, eth_pcts, on=['zip_code', 'survey_year'], how='left')
+    zip_equity = pd.merge(zip_equity, gen_pcts, on=['zip_code', 'survey_year'], how='left')
+
+    # E. UNIFORM ROUNDING (All pct_ and avg_ columns to 2 decimal places)
+    cols_to_round = [c for c in zip_equity.columns if c.startswith('pct_') or c.startswith('avg_')]
+    zip_equity[cols_to_round] = zip_equity[cols_to_round].round(2)
 
     # 3. PROCESS STAYING DATA (The "Behavior" Action)
     df_staying = pd.read_csv(raw_path / "staying.csv", low_memory=False)
@@ -60,13 +92,52 @@ def merge_vitality_data():
     # Merge with crosswalk to get zip codes
     staying_with_zips = pd.merge(df_staying, df_crosswalk, on='location_id', how='inner')
 
-    # Aggregate behavioral metrics by Zip and Era
-    # Note: 'survey_year' here now represents the lumped 2-year periods
+    # --- NEW: Observational Race/Ethnicity Mapping ---
+    # Gehl Protocol: A=Asian, B=Black, L=Latino, M=Multi, N=Native, P=Pacific, U=Unsure, W=White
+    race_map = {
+        'A': 'obs_race_asian', 'B': 'obs_race_black', 'L': 'obs_race_latino',
+        'M': 'obs_race_multiple', 'N': 'obs_race_native', 'P': 'obs_race_pacific',
+        'U': 'obs_race_unsure', 'W': 'obs_race_white'
+    }
+
+    # Create dummy columns for each race category
+    for code, col_name in race_map.items():
+        staying_with_zips[col_name] = (staying_with_zips['staying_race_ethnicity'] == code).astype(int)
+
+    staying_with_zips['obs_gen_female'] = (staying_with_zips['staying_gender'] == 'Female').astype(int)
+    staying_with_zips['obs_gen_male'] = (staying_with_zips['staying_gender'] == 'Male').astype(int)
+    staying_with_zips['obs_gen_other_unsure'] = (staying_with_zips['staying_gender'] == 'Other_Unsure').astype(int)
+
+    # Aggregate behavioral, weather, and observational demographics
     zip_behavior = staying_with_zips.groupby(['zip_code', 'survey_year']).agg(
         public_total_stays=('staying_row_total', 'sum'),
         digital_users=('using_electronics', 'sum'),
-        social_users=('talking_to_others', 'sum')
+        social_users=('talking_to_others', 'sum'),
+        # Weather
+        avg_staying_temperature=('staying_temperature', 'mean'),
+        # Observed Gender Totals
+        obs_gen_female=('obs_gen_female', 'sum'),
+        obs_gen_male=('obs_gen_male', 'sum'),
+        obs_gen_other_unsure=('obs_gen_other_unsure', 'sum'),
+        # Observed Race Totals
+        obs_race_asian=('obs_race_asian', 'sum'),
+        obs_race_black=('obs_race_black', 'sum'),
+        obs_race_latino=('obs_race_latino', 'sum'),
+        obs_race_multiple=('obs_race_multiple', 'sum'),
+        obs_race_native=('obs_race_native', 'sum'),
+        obs_race_pacific=('obs_race_pacific', 'sum'),
+        obs_race_unsure=('obs_race_unsure', 'sum'),
+        obs_race_white=('obs_race_white', 'sum')
     ).reset_index()
+
+    # Create Observed Percentages (for direct comparison to Residential Percentages)
+    obs_cols = [c for c in zip_behavior.columns if c.startswith('obs_')]
+    for col in obs_cols:
+        pct_name = col.replace('obs_', 'obs_pct_')
+        zip_behavior[pct_name] = (zip_behavior[col] / zip_behavior['public_total_stays'] * 100).round(2)
+
+    # Round Temperature
+    zip_behavior['avg_staying_temperature'] = zip_behavior['avg_staying_temperature'].round(1)
 
     # 4. FEATURE ENGINEERING: Digital-to-Social Ratio (DSR)
     # Formula: Digital / (Social + 1) -> The +1 prevents DivisionByZero errors

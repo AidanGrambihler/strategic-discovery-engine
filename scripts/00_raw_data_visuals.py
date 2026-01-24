@@ -110,16 +110,25 @@ def audit_raw_reliability():
     df_18 = pd.read_csv(raw_path / "tech_survey_2018.csv")
     df_23 = pd.read_csv(raw_path / "tech_survey_2023.csv")
 
+    # Calculate the global maximum Y-limit
+    # This finds the highest frequency in either dataset to synchronize the scale
+    max_18 = df_18['q6'].value_counts().max()
+    max_23 = df_23['Q6'].value_counts().max()
+    global_max = max(max_18, max_23) * 1.05  # Add 5% padding for labels
+
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
 
     # 2018 Plot (Notice the 0, 8, 9 codes)
     sns.countplot(data=df_18, x='q6', ax=axes[0], palette='magma')
     axes[0].set_title("Raw 2018 Reliability Codes (q6)\nIncludes 0, 8, 9")
+    axes[0].set_ylim(0, global_max)
 
     # 2023 Plot (Notice the 1-7 scale)
     sns.countplot(data=df_23, x='Q6', ax=axes[1], palette='viridis')
     axes[1].set_title("Raw 2023 Reliability Codes (Q6)\nIncludes 6, 7")
+    axes[1].set_ylim(0, global_max)
 
+    plt.tight_layout()
     plt.savefig(viz_path / "raw_reliability_comparison.png")
 
 
