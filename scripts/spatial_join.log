@@ -1,0 +1,5 @@
+2026-01-24 13:27:54,855 - INFO - Starting Spatial Join: Mapping Locations to ZIP Codes
+2026-01-24 13:27:54,953 - INFO - Generated centroids for 127 study locations.
+2026-01-24 13:27:54,956 - INFO - Using column 'zcta5ce10' as ZIP source.
+2026-01-24 13:27:54,958 - INFO - Crosswalk successfully created with 132 locations.
+2026-01-24 13:27:54,958 - INFO - Final crosswalk saved to: /Users/aidangrambihler/seattle-public-life-analysis/data/processed/location_to_zip_crosswalk.csv

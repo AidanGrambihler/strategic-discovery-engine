@@ -1,0 +1,16 @@
+2026-01-24 13:16:38,935 - INFO - Initializing GeoJSON trimming process
+2026-01-24 13:16:38,954 - INFO - Identified 30 unique ZIPs from tech_survey_2018.csv
+2026-01-24 13:16:38,971 - INFO - Identified 40 unique ZIPs from tech_survey_2023.csv
+2026-01-24 13:16:38,971 - INFO - Loading primary GeoJSON from /Users/aidangrambihler/seattle-public-life-analysis/data/raw/seattle_zip_codes.geojson
+2026-01-24 13:16:41,884 - INFO - Created 29 records
+2026-01-24 13:16:41,884 - INFO - Trimming complete.
+2026-01-24 13:16:41,884 - INFO - Original polygons: 33140 | Retained: 29
+2026-01-24 13:16:41,884 - INFO - Trimmed GeoJSON saved to: /Users/aidangrambihler/seattle-public-life-analysis/data/raw/seattle_zip_codes_trimmed.geojson
+2026-01-24 13:24:04,211 - INFO - Initializing GeoJSON trimming process
+2026-01-24 13:24:04,230 - INFO - Identified 30 unique ZIPs from tech_survey_2018.csv
+2026-01-24 13:24:04,248 - INFO - Identified 40 unique ZIPs from tech_survey_2023.csv
+2026-01-24 13:24:04,248 - INFO - Loading primary GeoJSON from /Users/aidangrambihler/seattle-public-life-analysis/data/raw/seattle_zip_codes.geojson
+2026-01-24 13:24:07,157 - INFO - Created 29 records
+2026-01-24 13:24:07,157 - INFO - Trimming complete.
+2026-01-24 13:24:07,157 - INFO - Original polygons: 33140 | Retained: 29
+2026-01-24 13:24:07,157 - INFO - Trimmed GeoJSON saved to: /Users/aidangrambihler/seattle-public-life-analysis/data/raw/seattle_zip_codes_trimmed.geojson
