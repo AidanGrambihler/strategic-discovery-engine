@@ -91,6 +91,35 @@ def calculate_spatial_bias(df, geometry_df, column='residuals'):
     return Moran(geo_df[column].values, w)
 
 
+def run_placebo_test(df, formula, n_permutations=100):
+    """
+    Runs a placebo (permutation) test by shuffling the dependent variable.
+    Helps determine if the observed coefficients are statistically meaningful
+    or just noise.
+    """
+    actual_model = smf.ols(formula, data=df).fit()
+    actual_coeff = actual_model.params['res_avg_reliability']
+
+    placebo_coeffs = []
+
+    # We use a copy to avoid modifying the original dataframe
+    temp_df = df.copy()
+
+    for _ in range(n_permutations):
+        # Shuffle the DSR values
+        temp_df['obs_dsr'] = np.random.permutation(temp_df['obs_dsr'])
+        model = smf.ols(formula, data=temp_df).fit()
+        placebo_coeffs.append(model.params['res_avg_reliability'])
+
+    # Calculate the 'p-value' of our actual coefficient against the placebo distribution
+    p_placebo = np.mean([abs(c) >= abs(actual_coeff) for c in placebo_coeffs])
+
+    return {
+        "actual_coeff": actual_coeff,
+        "placebo_distribution": placebo_coeffs,
+        "placebo_p_value": p_placebo
+    }
+
 def fit_dsr_models(df):
     """
     Fits the core regression stack.
@@ -98,7 +127,7 @@ def fit_dsr_models(df):
     """
     # 1. Baseline OLS with Robust Standard Errors
     m_baseline = smf.ols(
-        "obs_dsr ~ res_avg_reliability + res_median_income_bracket + C(survey_year)",
+        "obs_dsr ~ res_avg_reliability + res_median_income + C(survey_year)",
         data=df
     ).fit(cov_type='HC3')
 

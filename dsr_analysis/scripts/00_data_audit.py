@@ -17,7 +17,8 @@ from dsr_analysis import load_raw_counts
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+current_file = Path(__file__).resolve()
+BASE_DIR = current_file.parents[2]
 RAW_DIR = BASE_DIR / "data" / "raw"
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 OUTPUT_DIR = BASE_DIR / "visualizations" / "raw_checks"
@@ -64,7 +65,7 @@ def main():
         return
 
     # 2. Row Count Aggregation
-    data_counts = load_raw_counts(RAW_DIR)
+    data_counts = load_raw_counts()
     years = list(range(2017, 2025))
     table_data = []
     audit_log = {"meta": {"min_n": MIN_N}, "results": {}}

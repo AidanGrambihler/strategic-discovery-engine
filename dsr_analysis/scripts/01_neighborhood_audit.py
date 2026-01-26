@@ -15,8 +15,8 @@ from dsr_analysis import check_spatial_bridge
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-# Global path configuration
-BASE_DIR = Path(__file__).resolve().parent.parent
+current_file = Path(__file__).resolve()
+BASE_DIR = current_file.parents[2]
 RAW_DIR = BASE_DIR / "data" / "raw"
 
 # SEATTLE BOUNDARY CHECK (Rough bounding box for Seattle)

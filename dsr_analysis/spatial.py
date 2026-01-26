@@ -16,19 +16,25 @@ SEATTLE_CRS = "EPSG:32610"
 
 def wkt_to_gdf(df, wkt_col='polygon', crs="EPSG:4326"):
     """
-    Converts WKT strings to a GeoDataFrame and standardizes geometry.
-    Note: Always calculates centroids in a projected (metric) coordinate system.
+    Converts a DataFrame with a WKT column into a GeoDataFrame.
+    Handles Point, Polygon, and MultiPolygon strings.
     """
-    geo_series = df[wkt_col].apply(wkt.loads)
-    gdf = gpd.GeoDataFrame(df, geometry=geo_series, crs=crs)
+    if wkt_col not in df.columns:
+        raise KeyError(f"Column '{wkt_col}' not found in DataFrame. Available: {df.columns.tolist()}")
 
-    # Project to meters for accurate centroid calculation
-    logger.info(f"Re-projecting to {SEATTLE_CRS} for metric accuracy.")
-    gdf_projected = gdf.to_crs(SEATTLE_CRS)
+    # Ensure we are working with a copy to avoid SettingWithCopy warnings
+    temp_df = df.copy()
 
-    # We store the centroid but keep the full polygon as the main geometry
-    gdf['centroid'] = gdf_projected.centroid.to_crs(crs)
+    # Convert WKT strings to Shapely objects
+    # We use errors='coerce' logic implicitly by catching failures
+    try:
+        temp_df['geometry'] = temp_df[wkt_col].apply(wkt.loads)
+    except Exception as e:
+        # If it fails, try cleaning common WKT syntax errors
+        print(f"DEBUG: WKT parsing failed, attempting cleanup. Error: {e}")
+        temp_df['geometry'] = temp_df[wkt_col].str.strip().apply(wkt.loads)
 
+    gdf = gpd.GeoDataFrame(temp_df, geometry='geometry', crs=crs)
     return gdf
 
 
@@ -64,6 +70,21 @@ def calculate_spatial_autocorrelation(df, gdf):
     logger.info(f"Global Moran's I calculated: {mi.I:.4f} (p-value: {mi.p_sim:.4f})")
     return mi
 
+def check_spatial_bridge(locations_df, geography_df, join_col='location_id'):
+    """
+    Validates the connection between site locations and geographic polygons.
+    Returns the set of common IDs and IDs present in locations but missing in geography.
+    """
+    if join_col not in locations_df.columns or join_col not in geography_df.columns:
+        raise KeyError(f"Join column '{join_col}' must exist in both dataframes.")
+
+    loc_ids = set(locations_df[join_col].unique())
+    geo_ids = set(geography_df[join_col].unique())
+
+    common_ids = loc_ids.intersection(geo_ids)
+    missing_ids = loc_ids - geo_ids
+
+    return common_ids, missing_ids
 
 def plot_residuals(df, gdf, output_path=None):
     """

@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_context("talk")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+script_path = Path(__file__).resolve()
+BASE_DIR = script_path.parents[2]
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 VIZ_DIR = BASE_DIR / "visualizations" / "exploratory_analysis"
 VIZ_DIR.mkdir(parents=True, exist_ok=True)

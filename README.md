@@ -4,64 +4,74 @@
 ## 🔬 Project Overview
 This project investigates the relationship between residential internet reliability and public space behavior in Seattle. It tests the **"Connectivity Lifeboat"** theory: the hypothesis that lower home internet reliability forces residents to externalize digital activities into public spaces, thereby increasing the observed **Digital-to-Social Ratio (DSR)**.
 
-### Key Technical Findings
-* **The Reliability Paradox:** Contrary to the initial hypothesis, residential internet reliability was **not** a statistically significant predictor of public digital behavior (DSR) across OLS and Mixed-Effects models once socio-economic factors were controlled.
-* **Socio-Economic Drivers:** Median household income and neighborhood demographics emerged as the primary drivers of public life. Higher-income ZIP codes exhibit significantly lower DSR ($p < 0.1$), suggesting that wealthier areas lean more toward social interaction over digital device usage in public.
-* **Model Volatility:** Leave-One-Out (LOO) sensitivity analysis confirmed that digital behavior trends in Seattle are "brittle" and highly dependent on specific anchor neighborhoods rather than a uniform city-wide trend.
+### 🏛 Impact
+This analysis provides a framework for the City of Seattle to identify **'Digital Refuges'**—public spaces that serve as critical infrastructure for neighborhoods with high socio-economic vulnerability.
+
+### 🚀 Key Technical Findings
+* **The Reliability Paradox:** Residential internet reliability was **not** a statistically significant predictor of public digital behavior (DSR) once socio-economic factors were controlled.
+* **Socio-Economic Drivers:** Median household income and neighborhood demographics are the primary drivers. Higher-income ZIP codes exhibit significantly lower DSR ($p < 0.1$), suggesting wealthier areas lean toward social interaction over digital device usage in public.
 * **Spatial Independence:** Global Moran’s I analysis of model residuals confirms spatial randomness ($p \approx 0.08$), indicating the model successfully accounts for geographic trends without systematic bias.
+* **Model Volatility:** High Group Variance ($5.10$) in MixedLM indicates that public life is shaped by localized "Micro-Cultures" that resist city-wide generalizations.
+
+---
 
 ## 🏗 Repository Structure (Shablona Standard)
-Following scientific Python best practices, this project is modularized into a library and a narrative layer:
+This project is modularized into a production-ready library and a nested analytical layer:
 
-- `dsr_analysis/`: Core Python package containing data pipelines, regression logic, and spatial diagnostics.
-- `scripts/`: Production-ready analytical scripts (e.g., `07_statistical_modelling.py`).
+- `dsr_analysis/`: Core Python package.
+    - `scripts/`: Production analytical pipeline (00-08).
+    - `data_loader.py`: Specialized IO and cleaning logic.
+    - `spatial.py`: Geospatial transformations and WKT healing.
 - `data/`: 
-    - `raw/`: Original Seattle Open Data (Survey and Public Life observations).
-    - `processed/`: `master_table.csv` (The Analytical Base Table).
-- `visualizations/`: High-resolution forest plots, marginal effects charts, and spatial heatmaps.
-- `tests/`: `pytest` suite ensuring data integrity and ZIP-code standardization.
+    - `raw/`: Source data (For details on origins/provenance, see [data/README.md](data/README.md)).
+    - `processed/`: Standardized ABTs (Analytical Base Tables).
+- `visualizations/`: High-resolution forest plots, marginal effects, and spatial heatmaps.
+- `tests/`: `pytest` suite ensuring coordinate integrity and schema standardization.
 
 ---
 
 ## 🚀 Getting Started
 
 ### 1. Environment Setup
-This project uses `pip` and `venv`. 
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pip install -e .
 
-### 2. Run the Analysis
-The primary statistical suite generates the multi-model comparison table and forest plots:
-```bash
-python scripts/07_statistical_modelling.py
+### 2. Pipeline Execution
+The analytical pipeline is located within dsr_analysis/scripts/. Run them in sequence to build the Analytical Base Table (ABT):
+
+python dsr_analysis/scripts/00_data_audit.py: Validates file integrity.
+
+python dsr_analysis/scripts/02_geojson_trimming.py: Standardizes spatial boundaries.
+
+python dsr_analysis/scripts/04_clean_surveys.py: Harmonizes longitudinal survey data.
+
+python dsr_analysis/scripts/05_create_master_table.py: Fuses equity and vitality metrics.
+
+python dsr_analysis/scripts/06_model_visualizer.py: Generates regression forest plots.
 
 ### 3. Verify Code Integrity
-To ensure the data pipeline and package paths are configured correctly, run the test suite:
 ```bash
 pytest
 
 ## 📊 Methodology & Metrics
-* **Target Variable (DSR):** Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction.
-* **Multi-Model Stack:** Employs OLS for baseline, Mixed-Effects to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based user densities.
-* **Causal Diagnostic (Placebo Test):** To ensure internal validity, the model tests if reliability predicts general foot traffic (Volume) versus behavioral shifts (DSR).
+Target Variable (DSR): Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction: $$DSR = \frac{Digital}{Social + 1}$$Multi-Model Stack: Employs OLS for baseline, MixedLM to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based densities.Causal Diagnostic: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
+
+## 🛠 Engineering & Statistics Stack
+Modeling: statsmodels (OLS, MixedLM, GLM), patsy
+
+Spatial: geopandas, libpysal, esda (Spatial Autocorrelation)
+
+Visualization: matplotlib, seaborn
+
+Infrastructure: pytest, logging, pathlib
+
+## 📉 Limitations & Robustness
+Sample Size: Due to the municipal survey frequency ($N=32$ ZIP-Eras), results are exploratory and highlight the need for higher-granularity longitudinal data.
+
+The Income Gradient: The robust correlation between income and DSR suggests that "public digital life" is a proxy for broader socio-economic conditions rather than hardware access alone.
 
 
-
-## 🛠 Tech Stack
-* **Modeling:** `statsmodels` (OLS, MixedLM, GLM), `patsy`
-* **Spatial:** `geopandas`, `libpysal`, `esda` (Moran's I)
-* **Visuals:** `matplotlib`, `seaborn`
-
-## 📉 Analytical Findings & Robustness
-While initial hypotheses suggested a "Connectivity Lifeboat" effect, rigorous robustness testing revealed a more complex urban narrative:
-
-* **Infrastructure vs. Culture:** Home internet reliability is a significant predictor of total foot traffic (Urban Vitality), but not the mode of activity (Digital vs. Social).
-* **The Income Gradient:** As median income increases, DSR decreases—suggesting that "public digital life" is a proxy for broader socio-economic conditions rather than specific hardware access.
-* **Neighborhood Variance:** A high Group Variance (5.10) in the MixedLM indicates that public life is shaped by highly localized "Micro-Cultures" that resist broad generalizations.
-
-
-
-**Conclusion:** The "Connectivity Lifeboat" theory is not a city-wide rule in Seattle. Instead, public digital behavior is a complex product of neighborhood identity and socio-economic status.
+Conclusion: The "Connectivity Lifeboat" effect is highly localized. Public digital behavior in Seattle is a complex product of neighborhood identity and socio-economic status rather than a simple reaction to home outages.
