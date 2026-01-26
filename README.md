@@ -57,7 +57,13 @@ python dsr_analysis/scripts/06_model_visualizer.py: Generates regression forest 
 pytest
 
 ## 📊 Methodology & Metrics
-Target Variable (DSR): Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction: $$DSR = \frac{Digital}{Social + 1}$$Multi-Model Stack: Employs OLS for baseline, MixedLM to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based densities.Causal Diagnostic: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
+Target Variable (DSR): Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction:$$DSR = \frac{Digital}{Social + 1}$$
+
+Statistical Rigor: All hypothesis testing is conducted with a significance threshold of $\alpha = 0.05$. While some variables (like Median Income) showed trends at the $p < 0.1$ level, they are interpreted with caution regarding city-wide generalizability.
+
+Multi-Model Stack: Employs OLS for baseline, MixedLM to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based densities.
+
+Causal Diagnostic: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
 
 ## 🛠 Engineering & Statistics Stack
 Modeling: statsmodels (OLS, MixedLM, GLM), patsy
@@ -69,7 +75,11 @@ Visualization: matplotlib, seaborn
 Infrastructure: pytest, logging, pathlib
 
 ## 📉 Limitations & Robustness
-Sample Size: Due to the municipal survey frequency ($N=32$ ZIP-Eras), results are exploratory and highlight the need for higher-granularity longitudinal data.
+Sample Size & Granularity: Due to the municipal survey frequency ($N=32$ ZIP-Eras), results are exploratory and highlight the need for higher-granularity longitudinal data.
+
+Self-Reporting Bias: The residential internet reliability metrics are derived from self-reported survey data. These may reflect perceived quality rather than technical throughput and are not strictly guaranteed to be a representative sample of the entire ZIP code population.
+
+The "Commuter Assumption": A primary assumption of this study is that individuals observed in a specific ZIP code's public space also reside within that ZIP code. The data does not account for commuters or visitors who may live in areas with different infrastructure profiles than where they were observed.
 
 The Income Gradient: The robust correlation between income and DSR suggests that "public digital life" is a proxy for broader socio-economic conditions rather than hardware access alone.
 
