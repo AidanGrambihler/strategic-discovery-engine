@@ -15,18 +15,19 @@ This analysis provides a framework for the City of Seattle to identify **'Digita
 
 ---
 
-## 🏗 Repository Structure (Shablona Standard)
+## 🏗 Repository Structure
 This project is modularized into a production-ready library and a nested analytical layer:
 
 - `dsr_analysis/`: Core Python package.
     - `scripts/`: Production analytical pipeline (00-08).
     - `data_loader.py`: Specialized IO and cleaning logic.
+    - `models.py`: Statistical engine implementing OLS, MixedLM (Random Intercepts), and GLM (Negative Binomial) specifications via statsmodels.
     - `spatial.py`: Geospatial transformations and WKT healing.
 - `data/`: 
-    - `raw/`: Source data (For details on origins/provenance, see [data/README.md](data/README.md)).
-    - `processed/`: Standardized ABTs (Analytical Base Tables).
-- `visualizations/`: High-resolution forest plots, marginal effects, and spatial heatmaps.
-- `tests/`: `pytest` suite ensuring coordinate integrity and schema standardization.
+    - `raw/`: Source data (For details on origins/provenance, see [data:README.md](data:README.md)).
+    - `processed/`: Standardized ABTs (Analytical Base Tables) and trimmed GeoJSON boundaries.
+- `visualizations/`: Hierarchical storage of forest plots, marginal effects, and spatial heatmaps used in the final report.
+- `reports/`: Contains `dsr_analysis_report.ipynb`, the primary executive document, extending from initial data audit to final conclusions.
 
 ---
 
@@ -38,6 +39,8 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 pip install -e .
+```
+
 
 ### 2. Pipeline Execution
 The analytical pipeline is located within dsr_analysis/scripts/. Run them in sequence to build the Analytical Base Table (ABT):
@@ -55,6 +58,7 @@ python dsr_analysis/scripts/06_model_visualizer.py: Generates regression forest 
 ### 3. Verify Code Integrity
 ```bash
 pytest
+```
 
 ## 📊 Methodology & Metrics
 Target Variable (DSR): Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction:$$DSR = \frac{Digital}{Social + 1}$$
