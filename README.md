@@ -70,22 +70,22 @@ Multi-Model Stack: Employs OLS for baseline, MixedLM to account for ZIP-level cl
 Causal Diagnostic: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
 
 ## 🛠 Engineering & Statistics Stack
-Modeling: statsmodels (OLS, MixedLM, GLM), patsy
+**Modeling**: statsmodels (OLS, MixedLM, GLM), patsy
 
-Spatial: geopandas, libpysal, esda (Spatial Autocorrelation)
+**Spatial**: geopandas, libpysal, esda (Spatial Autocorrelation)
 
-Visualization: matplotlib, seaborn
+**Visualization**: matplotlib, seaborn
 
-Infrastructure: pytest, logging, pathlib
+**Infrastructure**: pytest, logging, pathlib
 
 ## 📉 Limitations & Robustness
-Sample Size & Granularity: Due to the municipal survey frequency ($N=32$ ZIP-Eras), results are exploratory and highlight the need for higher-granularity longitudinal data.
+**Sample Size & Granularity**: Due to the municipal survey frequency ($N=32$ ZIP-Eras), results are exploratory and highlight the need for higher-granularity longitudinal data.
 
-Self-Reporting Bias: The residential internet reliability metrics are derived from self-reported survey data. These may reflect perceived quality rather than technical throughput and are not strictly guaranteed to be a representative sample of the entire ZIP code population.
+**Self-Reporting Bias**: The residential internet reliability metrics are derived from self-reported survey data. These may reflect perceived quality rather than technical throughput and are not strictly guaranteed to be a representative sample of the entire ZIP code population.
 
-The "Commuter Assumption": A primary assumption of this study is that individuals observed in a specific ZIP code's public space also reside within that ZIP code. The data does not account for commuters or visitors who may live in areas with different infrastructure profiles than where they were observed.
+**The "Commuter Assumption"**: A primary assumption of this study is that individuals observed in a specific ZIP code's public space also reside within that ZIP code. The data does not account for commuters or visitors who may live in areas with different infrastructure profiles than where they were observed.
 
-The Income Gradient: The robust correlation between income and DSR suggests that "public digital life" is a proxy for broader socio-economic conditions rather than hardware access alone.
+**The Income Gradient**: The robust correlation between income and DSR suggests that "public digital life" is a proxy for broader socio-economic conditions rather than hardware access alone.
 
 
 **Conclusion**: The "Connectivity Lifeboat" effect is highly localized. Public digital behavior in Seattle is a complex product of neighborhood identity and socio-economic status rather than a simple reaction to home outages.
