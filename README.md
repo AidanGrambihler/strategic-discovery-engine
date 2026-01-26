@@ -45,15 +45,15 @@ pip install -e .
 ### 2. Pipeline Execution
 The analytical pipeline is located within dsr_analysis/scripts/. Run them in sequence to build the Analytical Base Table (ABT):
 
-python dsr_analysis/scripts/00_data_audit.py: Validates file integrity.
+`python dsr_analysis/scripts/00_data_audit.py`: Validates file integrity.
 
-python dsr_analysis/scripts/02_geojson_trimming.py: Standardizes spatial boundaries.
+`python dsr_analysis/scripts/02_geojson_trimming.py`: Standardizes spatial boundaries.
 
-python dsr_analysis/scripts/04_clean_surveys.py: Harmonizes longitudinal survey data.
+`python dsr_analysis/scripts/04_clean_surveys.py`: Harmonizes longitudinal survey data.
 
-python dsr_analysis/scripts/05_create_master_table.py: Fuses equity and vitality metrics.
+`python dsr_analysis/scripts/05_create_master_table.py`: Fuses equity and vitality metrics.
 
-python dsr_analysis/scripts/06_model_visualizer.py: Generates regression forest plots.
+`python dsr_analysis/scripts/06_model_visualizer.py`: Generates regression forest plots.
 
 ### 3. Verify Code Integrity
 ```bash
