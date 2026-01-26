@@ -88,4 +88,4 @@ The "Commuter Assumption": A primary assumption of this study is that individual
 The Income Gradient: The robust correlation between income and DSR suggests that "public digital life" is a proxy for broader socio-economic conditions rather than hardware access alone.
 
 
-Conclusion: The "Connectivity Lifeboat" effect is highly localized. Public digital behavior in Seattle is a complex product of neighborhood identity and socio-economic status rather than a simple reaction to home outages.
+**Conclusion**: The "Connectivity Lifeboat" effect is highly localized. Public digital behavior in Seattle is a complex product of neighborhood identity and socio-economic status rather than a simple reaction to home outages.
