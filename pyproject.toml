@@ -1,3 +1,38 @@
 [build-system]
-# Setuptools version should match setup.py; wheel because pip will insert it noisily
-requires = ["setuptools >= 24.2.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Shablona Tip: Keep the name consistent with your folder for 'pip install' clarity
+name = "seattle_public_life_analysis"
+version = "0.1.0"
+description = "Spatial analysis of Digital-to-Social Ratios in Seattle"
+readme = "README.md"
+authors = [{name = "Aidan Grambihler"}]
+requires-python = ">=3.10" # Updated to support Pandas 3.0/Numpy 2.x
+license = {text = "MIT"}
+
+# We use >= here. This is the 'Contract of Compatibility'.
+dependencies = [
+    "pandas>=3.0.0",
+    "numpy>=2.0.0",
+    "geopandas>=1.0.0",
+    "statsmodels>=0.14.0",
+    "libpysal>=4.10.0",
+    "esda>=2.5.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "scipy>=1.11.0",
+    "patsy>=1.0.0"
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0.0"]
+
+# This tells Python that when someone runs 'dsr-run', it executes your script
+[project.scripts]
+dsr-run = "scripts.07_statistical_modelling:main"
+
+[tool.setuptools]
+# Explicitly find the package even if the name differs from the project name
+packages = ["dsr_analysis", "scripts"]

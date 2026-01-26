@@ -1,10 +1,30 @@
-*.py[co]
-*~
-*.DS_Store
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
 
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# OS Junk
+*.DS_Store
+.recommender/
+
+#Ignore egg-info metadata directory
+*.egg-info/
+
+# Data Rules
 # Ignore the giant file that breaks GitHub
 data/raw/seattle_zip_codes.geojson
 
-# But track everything else in data
-!data/raw/
-!data/processed/
+# Track the folder structures, but ignore large CSVs if they exceed 50MB
+# (Optional: Add specific large filenames here if needed)
+
+# Keep the History/Log files out of Git
+*.log

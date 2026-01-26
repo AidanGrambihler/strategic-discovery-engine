@@ -1,70 +1,69 @@
 # Data Registry & Technical Schema
 
-This directory contains the raw data files retrieved from the [Seattle Open Data Portal](https://data.seattle.gov/) on **January 22, 2026**, supplemented with municipal geospatial boundaries.
+This directory manages the raw source files and the transformation logic used to build the final analytical base table (ABT). All municipal data was retrieved from the [Seattle Open Data Portal](https://data.seattle.gov/) on **January 22, 2026**.
+
+## 🔄 Data Lineage & Pipeline
+The project follows a linear transformation pipeline to ensure reproducibility:
+1. **Raw Layer (`/data/raw`):** Immutable source files from Seattle Open Data.
+2. **Feature Engineering (`scripts/03_feature_engineering.py`):** Normalization of income buckets and calculation of the DSR ratio.
+3. **Analytical Base Table (`/data/processed/master_table.csv`):** The final joined, Z-scored, and pruned dataset used in the model stack.
+
+---
 
 ## 🏗️ Anchor Data: Public Life (SDOT)
 *Agency: Seattle Department of Transportation (SDOT)*
 
-| Local Filename | Official Dataset Name | Data Last Updated | Metadata Last Updated | Key Function |
-| :--- | :--- | :--- | :--- | :--- |
-| `study.csv` | [Public Life Data - Study](https://data.seattle.gov/Community-and-Culture/Public-Life-Data-Study/7qru-sdcp/) | Feb 6, 2023 | Jan 28, 2025 | Metadata on specific study projects. |
-| `locations.csv` | [Public Life Data - Locations](https://data.seattle.gov/Community-and-Culture/Public-Life-Data-Locations/fg6z-cn3y/) | Feb 6, 2023 | Jan 28, 2025 | Attributes for site comparisons (e.g. street blocks). |
-| `geography.csv` | [Public Life Data - Geography](https://data.seattle.gov/Community-and-Culture/Public-Life-Data-Geography/v4q3-5hvp/) | Feb 6, 2023 | Jan 29, 2025 | GIS polygons/boundaries for sites. |
-| `moving.csv` | [Public Life Data - People Moving](https://data.seattle.gov/Community-and-Culture/Public-Life-Data-People-Moving/7rx6-5pgd/) | Feb 15, 2023 | Jan 28, 2025 | Foot traffic and demographic counts. |
-| `staying.csv` | [Public Life Data - People Staying](https://data.seattle.gov/Community-and-Culture/Public-Life-Data-People-Staying/5mzj-4rtf/) | Mar 5, 2024 | Jan 28, 2025 | **Primary Dependent Variable (DSR) Source.** |
+| Local Filename | Official Dataset Name | Key Function | Raw Columns Used |
+| :--- | :--- | :--- | :--- |
+| `locations.csv` | [Public Life - Locations](https://data.seattle.gov/...) | Block-level IDs | `Location ID`, `Neighborhood` |
+| `staying.csv` | [Public Life - Staying](https://data.seattle.gov/...) | **Dependent Variable** | `Electronic Communication`, `Social Communication` |
+| `geography.csv` | [Public Life - Geography](https://data.seattle.gov/...) | GIS Geometries | `geometry`, `Location ID` |
 
-> **Note on `staying.csv`:** This project prioritizes "staying" data (20-minute intervals) over "moving" data because it captures intentional use of space, including temperature, group size, and specific activities like **talking_to_others** vs. **using_electronics**.
+### ⚠️ Methodological Pruning: `moving.csv`
+`moving.csv` (pedestrian flow) was excluded from the final regression stack. 
+* **Reason:** It lacked behavioral markers (electronic device usage) required for DSR calculation. 
+* **Impact:** Focuses the model on "dwell time" behavior where digital vs. social choice is most deliberate.
+
+---
 
 ## 🌐 Supplemental Data: Digital Equity (IT)
 *Agency: Seattle Information Technology - Digital Equity Team*
 
-| Local Filename | Official Dataset Name | Data Last Updated | Metadata Last Updated | Key Function |
-| :--- | :--- | :--- | :--- | :--- |
-| `tech_survey_2018.csv` | [Technology Access and Adoption 2018](https://data.seattle.gov/Community-and-Culture/Technology-Access-and-Adoption-Survey-2018/cz6d-tu92/) | Nov 15, 2018 | Jan 28, 2025 | Baseline (Pre-Pandemic) metrics. |
-| `tech_survey_2023.csv` | [Technology Access and Adoption 2023](https://data.seattle.gov/Community-and-Culture/Technology-Access-and-Adoption-Survey-2023/jddv-fz6y/) | Oct 4, 2023 | Jan 29, 2025 | Modern (Post-Pandemic) metrics. |
+| Local Filename | Official Dataset Name | Key Function | N (Original) |
+| :--- | :--- | :--- | :--- |
+| `tech_survey_2018.csv` | [Technology Access 2018](https://data.seattle.gov/...) | Baseline Metrics | 4,315 |
+| `tech_survey_2023.csv` | [Technology Access 2023](https://data.seattle.gov/...) | Modern Metrics | 2,780 |
 
 ---
 
 ## 🛠️ Field Mappings & Standardization
 
-### 1. Longitudinal Survey Alignment
-To compare 2018 and 2023 surveys, variable schemas were mapped as follows:
-* **Internet Access:** `q1` (2018) mapped to `Q1` (2023). Defined as having a home connection (Fiber, DSL, Cable, or Cellular).
-* **Reliability:** `q6` (2018) mapped to `Q6` (2023). Scale: 1 (Adequate) to 5 (Not Adequate).
-* **Societal Impact:** `q22_2` (2018) mapped to `q23` (2023). Scale: 1 (Positive) to 5 (Harmful).
+### 1. The Digital-to-Social Ratio (DSR)
+The DSR is the core behavioral metric. It is calculated as:
+$$DSR = \frac{\text{Electronic Communication}}{\text{Social Communication} + 1}$$
+*(The $+1$ Laplace smoothing is applied to prevent division-by-zero errors in social-heavy ZIP codes.)*
 
-### 2. Income Normalization (Inflation-Adjusted)
-A unified 1–7 index was created to handle shifting income buckets. While numerically similar, the 2023 buckets represent a ~21.2% decrease in purchasing power relative to 2018 (based on CPI-U). 
+### 2. Inflation-Adjusted Income Normalization
+Income was binned into a 1–7 index to maintain longitudinal validity across a ~21.2% CPI-U shift (2018–2023).
 
-| Unified Index | 2018 Nominal Range | 2018 in "2023 Dollars" | 2023 Survey Range | Alignment Note |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | Below $25k | Below $30.2k | Less than $27k | **Tightened** (2023 is poorer) |
-| **2** | $25k - $50k | $30.2k - $60.5k | $27k - $46k | **Shifted Down** |
-| **3** | $50k - $75k | $60.5k - $90.7k | $46k - $74k | **Overlap** |
-| **4** | $75k - $100k | $90.7k - $121k | $74k - $100k | **Shifted Down** |
-| **5** | $100k - $150k| $121k - $181k | $100k - $150k| **Stable** |
-| **6** | $150k - $200k| $181k - $242k | $150k - $200k| **Stable** |
-| **7** | $200k+ | $242k+ | $200k+ | **Stable** |
+| Unified Index | 2018 Nominal Range | 2023 Survey Range |
+| :---: | :--- | :--- |
+| **1** | Below $25k | Less than $27k |
+| **4** | $75k - $100k | $75k - $100k |
+| **7** | $200k+ | $200k+ |
 
 ---
 
-## ⚖️ Methodological Assumptions & Rigor
+## ⚖️ Methodological Rigor
 
 ### 📍 The Locality Assumption
-A standard urban planning assumption is applied: users observed in a neighborhood plaza are likely residents of the ZIP code in which the plaza is located. Thus, residential survey data (connectivity/income) is treated as the primary environmental pressure for those users.
+Consistent with urban planning standards (e.g., Gehl Institute), we assume users in neighborhood plazas are residents of that specific ZIP code. This allows us to use residential survey data as environmental predictors of plaza behavior.
 
-### 🔢 The "Small N" Rule & Bias
-Per Seattle IT instructions, **"comparisons among subgroups shouldn't be made when n < 50."** * Any ZIP code with <50 survey respondents was excluded from regression models.
-* Future research is required to verify if survey respondents are demographically representative of their ZIP codes (Census/ACS validation) to account for potential response bias.
-
-### ⚖️ Unweighted Analysis
-This project deliberately utilizes **unweighted raw means** at the ZIP-code level.
-* **Reasoning:** SDOT observation data is unweighted "headcount" data. Weighting only the survey side would create a mathematical mismatch. Furthermore, we are interested in the raw behavioral substitution signal between neighborhoods rather than city-wide population totals.
+### 🔢 The "Small N" Rule ($N \ge 50$)
+Per Seattle IT data privacy guidelines, ZIP-level survey results were only included if they contained $\ge 50$ responses. 
+* **Result:** Pruned 4 ZIP codes from the final model to prevent outlier-driven bias.
 
 ### 🗓️ Temporal Lumping (Era Proxies)
-To maximize statistical power and ensure robust alignment with the Technology Access surveys, observations are aggregated into two era-based proxies:
-
-* **Pre-Pandemic Proxy ('2018'):** Combined observations from 2018 and 2019. 
-* **Post-Pandemic Proxy ('2023'):** Combined observations from 2022 and 2023.
-
-**Methodological Justification:** This "lumping" assumes that urban behavior and digital reliance within these two-year windows were internally consistent enough to represent their respective eras. By including 2019 and 2022 data, we significantly increase the N-size per ZIP code, which is critical for meeting the "Small N" requirement ($N \ge 50$) and improving the confidence of the final regression models.
+To maximize statistical power ($N=32$ final modeling units), observations are aggregated into:
+* **Pre-Pandemic ('2018'):** 2018–2019 survey & observation data.
+* **Post-Pandemic ('2023'):** 2022–2023 survey & observation data.

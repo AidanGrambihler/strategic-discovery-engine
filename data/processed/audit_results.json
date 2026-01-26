@@ -1,0 +1,71 @@
+{
+    "meta": {
+        "min_n": 50
+    },
+    "results": {
+        "2017": {
+            "counts": {
+                "survey": 0,
+                "staying": 0,
+                "moving": 0
+            },
+            "status": "PASS"
+        },
+        "2018": {
+            "counts": {
+                "survey": 4315,
+                "staying": 6537,
+                "moving": 1728
+            },
+            "status": "PASS"
+        },
+        "2019": {
+            "counts": {
+                "survey": 0,
+                "staying": 4179,
+                "moving": 495
+            },
+            "status": "PASS"
+        },
+        "2020": {
+            "counts": {
+                "survey": 0,
+                "staying": 486,
+                "moving": 56
+            },
+            "status": "PASS"
+        },
+        "2021": {
+            "counts": {
+                "survey": 0,
+                "staying": 0,
+                "moving": 0
+            },
+            "status": "PASS"
+        },
+        "2022": {
+            "counts": {
+                "survey": 0,
+                "staying": 1248,
+                "moving": 99
+            },
+            "status": "PASS"
+        },
+        "2023": {
+            "counts": {
+                "survey": 4197,
+                "staying": 4512,
+                "moving": 0
+            },
+            "status": "PASS"
+        },
+        "2024": {
+            "counts": {
+                "survey": 0,
+                "staying": 0,
+                "moving": 0
+            },
+            "status": "PASS"
+        }
+    }
+}

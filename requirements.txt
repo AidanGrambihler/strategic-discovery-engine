@@ -1,4 +1,23 @@
-numpy
-scipy
-matplotlib
-pandas
+# --- Core Data Stack ---
+numpy==2.4.1
+pandas==3.0.0
+scipy==1.17.0
+
+# --- Spatial & GIS ---
+geopandas==1.1.2
+libpysal==4.14.1
+esda==2.8.1
+shapely==2.1.2
+pyproj==3.7.2
+
+# --- Modeling & Stats ---
+statsmodels==0.14.6
+patsy==1.0.2
+scikit-learn==1.8.0
+
+# --- Visualization ---
+matplotlib==3.10.8
+seaborn==0.13.2
+
+# --- Testing (Dev only) ---
+pytest==9.0.2

@@ -1,6 +1,0 @@
-2026-01-24 14:09:53,921 - INFO - Loading Master Vitality Index for statistical analysis
-2026-01-24 14:09:53,923 - INFO - Modeling with 34 robust neighborhood-year observations.
-2026-01-24 14:09:53,923 - INFO - Running Model 1: Baseline OLS
-2026-01-24 14:09:53,934 - INFO - Running Model 2: Sentiment and Dependency Controls
-2026-01-24 14:09:53,939 - INFO - Running Model 3: Time-Interaction Model
-2026-01-24 14:09:53,943 - INFO - Running Model 4: Linear Mixed-Effects (Random Intercept by ZIP)

@@ -1,6 +1,0 @@
-2026-01-24 13:12:36,639 - INFO - Initializing Neighborhood & Spatial Alignment Audit
-2026-01-24 13:12:36,671 - INFO - Geometry column validation: SUCCESS
-2026-01-24 13:12:36,671 - INFO - Alignment: 127 / 132 sites mapped to geography.
-2026-01-24 13:12:36,671 - WARNING - Spatial Gap Detected: 5 IDs missing polygons: {'BLT6', 'PIO19', 'PIK5', 'OTH3', 'BLT5'}
-2026-01-24 13:12:36,672 - WARNING - IMPACT: Spatial join will drop 289 observations.
-2026-01-24 13:12:36,673 - INFO - Loss breakdown by site: {'BLT5': 82, 'OTH3': 11, 'PIK5': 112, 'PIO19': 84}
