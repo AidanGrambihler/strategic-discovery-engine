@@ -61,13 +61,13 @@ pytest
 ```
 
 ## 📊 Methodology & Metrics
-Target Variable (DSR): Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction:$$DSR = \frac{Digital}{Social + 1}$$
+**Target Variable (DSR)**: Calculated as the ratio of observed individuals using electronic devices vs. individuals engaged in social interaction:$$DSR = \frac{Digital}{Social + 1}$$
 
-Statistical Rigor: All hypothesis testing is conducted with a significance threshold of $\alpha = 0.05$. While some variables (like Median Income) showed trends at the $p < 0.1$ level, they are interpreted with caution regarding city-wide generalizability.
+**Statistical Rigor**: All hypothesis testing is conducted with a significance threshold of $\alpha = 0.05$. While some variables (like Median Income) showed trends at the $p < 0.1$ level, they are interpreted with caution regarding city-wide generalizability.
 
-Multi-Model Stack: Employs OLS for baseline, MixedLM to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based densities.
+**Multi-Model Stack**: Employs OLS for baseline, MixedLM to account for ZIP-level clustering, and Negative Binomial GLMs to validate count-based densities.
 
-Causal Diagnostic: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
+**Causal Diagnostic**: Employs a "Placebo Test" to ensure reliability predicts behavioral shifts (DSR) specifically, rather than general foot traffic volume.
 
 ## 🛠 Engineering & Statistics Stack
 **Modeling**: statsmodels (OLS, MixedLM, GLM), patsy
