@@ -28,3 +28,12 @@ data/raw/seattle_zip_codes.geojson
 
 # Keep the History/Log files out of Git
 *.log
+
+# Ignore the virtual environment
+.venv/
+__pycache__/
+
+# Ignore data files (Professional standard: keep data out of Git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep

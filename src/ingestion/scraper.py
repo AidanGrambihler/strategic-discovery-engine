@@ -1,81 +1,116 @@
 import requests
 from bs4 import BeautifulSoup
+import json
+import os
+import re
 import logging
-import time
-from datetime import datetime
 
-# Set up professional logging
+# Standard logging for professional status reporting
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-class RecoveryScraper:
-    """
-    Standardized scraper for high-end recovery devices.
-    Designed for modularity and resilience against UI changes.
-    """
-
-    def __init__(self, headers=None):
-        self.headers = headers or {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9'
+class GoldStandardScraper:
+    def __init__(self):
+        self.url = "https://www.techgearlab.com/topics/health-fitness/best-massage-gun"
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
-    def fetch_page(self, url):
-        """Fetches HTML with professional error handling and timeouts."""
+        # Targeted attributes to extract from the comparison matrix
+        self.target_attributes = {
+            "Measured Amplitude": "amplitude",
+            "Measured Stall Force": "stall_force",
+            "Measured Maximum PPM/Stroke": "max_ppm",
+            "Measured Weight": "weight",
+            "Maximum Measured Sound Range": "sound_range",
+            "Price": "price"
+        }
+
+    def _clean_price(self, raw_text):
+        """Extracts the first currency pattern found (e.g., '$650')."""
+        if not raw_text: return None
+        match = re.search(r'\$\d+(?:,\d{3})*(?:\.\d{2})?', raw_text)
+        return match.group(0) if match else raw_text
+
+    def scrape_and_transpose(self):
+        logger.info(f"Accessing live DOM at: {self.url}")
         try:
-            time.sleep(1)  # Basic rate limiting to be a 'good bot'
-            response = requests.get(url, headers=self.headers, timeout=15)
+            response = requests.get(self.url, headers=self.headers, timeout=15)
             response.raise_for_status()
-            return response.text
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Network error fetching {url}: {e}")
-            return None
+            soup = BeautifulSoup(response.text, 'html.parser')
+        except Exception as e:
+            logger.error(f"Failed to fetch page: {e}")
+            return []
 
-    def _extract_spec_by_keyword(self, soup, keyword):
-        """
-        Helper to find specs in messy HTML by searching for specific labels.
-        This is more resilient than hard-coded CSS paths.
-        """
-        # Look for the keyword in any tag, then find its nearest value
-        element = soup.find(lambda tag: tag.name in ['dt', 'span', 'div', 'th'] and keyword in tag.get_text())
-        if element:
-            # Often the value is in the next sibling or a parent's child
-            value = element.find_next(['dd', 'span', 'div', 'td'])
-            return value.get_text(strip=True) if value else None
-        return None
+        # 1. Locate the master comparison table
+        table = soup.find('table', id='compare') or soup.find('table', class_=re.compile('compare', re.I))
+        if not table:
+            logger.error("Comparison table not found in the DOM.")
+            return []
 
-    def scrape_product(self, url, brand="generic"):
-        """Main entry point for scraping any recovery product."""
-        html = self.fetch_page(url)
-        if not html:
-            return None
+        # 2. Map Columns to Product Names
+        products = []
+        name_containers = table.select('div.compare_product_name')
 
-        soup = BeautifulSoup(html, 'html.parser')
+        for container in name_containers:
+            name = container.get_text(strip=True)
+            if name:
+                products.append({"brand_model": name})
 
-        # Standardized schema for the 'Item Tower'
-        specs = {
-            "brand": brand,
-            "url": url,
-            "scraped_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "amplitude_mm": self._extract_spec_by_keyword(soup, "Amplitude"),
-            "stall_force_lbs": self._extract_spec_by_keyword(soup, "Stall Force"),
-            "ppm_max": self._extract_spec_by_keyword(soup, "Percussions"),
-            "battery_life": self._extract_spec_by_keyword(soup, "Battery")
-        }
+        num_products = len(products)
+        logger.info(f"Detected {num_products} products in the comparison matrix.")
 
-        logger.info(f"Successfully scraped specs for: {url}")
-        return specs
+        # 3. Iterate through rows to map metrics back to products
+        rows = table.find_all('tr')
+        for row in rows:
+            header_cell = row.find(['th', 'td'], class_=re.compile('compare_names', re.I))
+            if not header_cell:
+                continue
+
+            header_text = header_cell.get_text(strip=True)
+
+            attribute_key = None
+            for target_name, key in self.target_attributes.items():
+                if target_name.lower() in header_text.lower():
+                    attribute_key = key
+                    break
+
+            if attribute_key:
+                data_cells = row.find_all('td', class_=re.compile('compare_items', re.I))
+                for i, cell in enumerate(data_cells):
+                    if i < num_products:
+                        raw_value = cell.get_text(strip=True)
+                        if attribute_key == "price":
+                            raw_value = self._clean_price(raw_value)
+                        products[i][attribute_key] = raw_value
+
+        return products
+
+    def save(self, data, output_path):
+        # Ensure the directory (data/raw) exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        with open(output_path, "w", encoding='utf-8') as f:
+            count = 0
+            for entry in data:
+                # Only save products that actually have scraped specs
+                if len(entry) > 1:
+                    f.write(json.dumps(entry) + "\n")
+                    count += 1
+        logger.info(f"Successfully saved {count} gold standards to: {output_path}")
 
 
 if __name__ == "__main__":
-    scraper = RecoveryScraper()
-    # Testing with a known gold-standard device
-    test_url = "https://www.therabody.com/products/theragun-pro-plus"
-    product_data = scraper.scrape_product(test_url, brand="Therabody")
-    if product_data:
-        print("\n--- Scraped Data ---")
-        for key, value in product_data.items():
-            print(f"{key.upper()}: {value}")
-    else:
-        print("Scrape failed. Check logs for error details.")
+    # Dynamically resolve project root: strategic-discovery-engine/
+    # This logic assumes scraper.py is located in src/ingestion/
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(script_dir, "../../"))
+
+    save_path = os.path.join(project_root, "data", "raw", "gold_standards.jsonl")
+
+    scraper = GoldStandardScraper()
+    final_data = scraper.scrape_and_transpose()
+
+    if final_data:
+        scraper.save(final_data, save_path)
