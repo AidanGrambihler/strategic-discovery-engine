@@ -4,7 +4,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import os
 
 
-def run_discovery_engine():
+def run_professional_discovery():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
     vector_path = os.path.join(project_root, "data", "processed", "product_vectors.npy")
     meta_path = os.path.join(project_root, "data", "processed", "product_metadata.csv")
@@ -12,58 +12,55 @@ def run_discovery_engine():
     vectors = np.load(vector_path)
     df = pd.read_csv(meta_path)
 
-    # 1. Choose your Target (Anchor)
-    # We'll search your 192 items for a 'Theragun Elite'
-    target_keyword = "Theragun Elite"
+    # Your 11 Gold Standards
+    gold_standards = [
+        "Theragun Pro", "Theragun Elite", "Theragun Mini",
+        "Hypervolt 2 Pro", "Ekrin Athletics Bantam", "Theragun Prime",
+        "Bob and Brad Q2", "Lifepro Sonic", "Ekrin Athletics B37",
+        "Mighty Bliss", "Renpho Handheld"
+    ]
 
-    # Find the row in your 192 that most closely matches the Gold Standard title
-    anchor_matches = df[df['title'].str.contains(target_keyword, case=False, na=False)]
+    print(f"--- STRATEGIC DISCOVERY REPORT: 11 ANCHORS VS {len(df)} PRODUCTS ---")
 
-    if anchor_matches.empty:
-        # Fallback: if the exact item isn't in your 192, we'll pick the most expensive 'Theragun'
-        anchor_matches = df[df['title'].str.contains("Theragun", case=False, na=False)].sort_values(by='price',
-                                                                                                    ascending=False)
+    for target in gold_standards:
+        # 1. Find the Anchor in your data
+        matches = df[df['title'].str.contains(target, case=False, na=False)]
+        if matches.empty:
+            continue
 
-    if anchor_matches.empty:
-        print(f"Could not find {target_keyword} in the 192 items.")
-        return
+        anchor_idx = matches.index[0]
+        anchor_vector = vectors[anchor_idx].reshape(1, -1)
+        anchor_price = df.iloc[anchor_idx]['price']
 
-    anchor_idx = anchor_matches.index[0]
-    anchor_name = df.iloc[anchor_idx]['title']
-    anchor_price = df.iloc[anchor_idx]['price']
-    anchor_vector = vectors[anchor_idx].reshape(1, -1)
+        # 2. Math & Scoring
+        df['similarity'] = cosine_similarity(anchor_vector, vectors).flatten()
+        df['price_ratio'] = df['price'] / anchor_price
+        df['confidence_modifier'] = df['rating_number'].apply(lambda x: min(x / 50, 1.0))
 
-    print(f"🎯 BENCHMARK: {anchor_name} (${anchor_price})")
+        # Weighted Disruption Score
+        df['disruption_score'] = (
+                (df['similarity'] * 0.60) +
+                ((1 - df['price_ratio']) * 0.25) +
+                ((df['average_rating'].fillna(0) / 5.0) * df['confidence_modifier'] * 0.15)
+        )
 
-    # 2. Similarity Math
-    similarities = cosine_similarity(anchor_vector, vectors).flatten()
-    df['similarity'] = similarities
+        # 3. Filter for quality
+        disruptors = df[
+            (df.index != anchor_idx) &
+            (df['similarity'] > 0.65) &  # Must be a decent match
+            (df['price'] >= 35.0) &  # Filter out the 'vibrating toy' tier
+            (df['price'] < anchor_price)  # Must actually be a deal
+            ].sort_values(by='disruption_score', ascending=False)
 
-    # 3. Disruption Scoring
-    # Logic: High similarity, Lower Price, High Rating
-    df['price_ratio'] = df['price'] / anchor_price
-
-    # We reward: High similarity (50%), Low price ratio (30%), High rating (20%)
-    df['disruption_score'] = (
-            (df['similarity'] * 0.5) +
-            ((1 - df['price_ratio']) * 0.3) +
-            ((df['average_rating'].fillna(0) / 5.0) * 0.2)
-    )
-
-    # 4. The "Anti-Clone" Filter
-    # Filter out the anchor itself and items with zero reviews
-    results = df[
-        (df.index != anchor_idx) &
-        (df['rating_number'] > 0) &
-        (df['price'] < anchor_price)  # Must be cheaper to be a disruptor
-        ].sort_values(by='disruption_score', ascending=False)
-
-    print("\n--- TOP 3 STRATEGIC DISRUPTORS ---")
-    for i, row in results.head(3).iterrows():
-        print(f"🔥 {row['title'][:60]}...")
-        print(f"   Similarity: {row['similarity']:.2f} | Price: ${row['price']:.2f} | Rating: {row['average_rating']}⭐")
-        print(f"   Score: {row['disruption_score']:.3f}\n")
+        # 4. Print results
+        print(f"\n🔎 ANCHOR: {target} (${anchor_price})")
+        if not disruptors.empty:
+            top = disruptors.iloc[0]
+            print(f"   🏆 TOP DISRUPTOR: {top['title'][:55]}...")
+            print(f"   📊 Score: {top['disruption_score']:.3f} | Sim: {top['similarity']:.2f} | Price: ${top['price']}")
+        else:
+            print("   ❌ No high-quality disruptors found.")
 
 
 if __name__ == "__main__":
-    run_discovery_engine()
+    run_professional_discovery()
