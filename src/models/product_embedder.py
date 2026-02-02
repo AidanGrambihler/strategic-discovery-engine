@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def generate_embeddings():
     # 1. Path Setup
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-    input_file = os.path.join(project_root, "data", "processed", "amazon_massage_gun_master_v2.jsonl")
+    input_file = os.path.join(project_root, "data", "processed", "amazon_massage_gun_augmented.jsonl")
     output_vectors = os.path.join(project_root, "data", "processed", "product_vectors.npy")
     output_metadata = os.path.join(project_root, "data", "processed", "product_metadata.csv")
 
