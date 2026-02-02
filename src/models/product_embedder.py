@@ -1,82 +1,49 @@
+import json
+import os
 import numpy as np
 import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
-import os
+from sentence_transformers import SentenceTransformer
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def run_final_discovery():
+def generate_embeddings():
     # 1. Path Setup
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-    vector_path = os.path.join(project_root, "data", "processed", "product_vectors.npy")
-    meta_path = os.path.join(project_root, "data", "processed", "product_metadata.csv")
+    input_file = os.path.join(project_root, "data", "processed", "amazon_massage_gun_master_v2.jsonl")
+    output_vectors = os.path.join(project_root, "data", "processed", "product_vectors.npy")
+    output_metadata = os.path.join(project_root, "data", "processed", "product_metadata.csv")
 
-    if not os.path.exists(vector_path) or not os.path.exists(meta_path):
-        print("Error: Missing data files. Run product_embedder.py first.")
+    # 2. Load Data
+    items = []
+    if not os.path.exists(input_file):
+        logger.error(f"Input file not found at {input_file}")
         return
 
-    vectors = np.load(vector_path)
-    df = pd.read_csv(meta_path)
+    with open(input_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            items.append(json.loads(line))
 
-    # 2. MAPPING: Spec Name -> Amazon Title Fragment
-    # This aligns your 11 Gold Standards with the actual strings found in your 192 list
-    anchor_map = {
-        "Theragun Elite": "TheraGun Elite",
-        "Theragun Mini": "Theragun G3",  # Using G3 as the small-frame proxy
-        "Hypervolt 2 Pro": "Hypervolt 2 Pro",
-        "Hypervolt 2": "Hypervolt 2 - Featuring",
-        "Lifepro Sonic": "LifePro Mini",
-        "Renpho Active": "RENPHO Active",
-    }
+    df = pd.DataFrame(items)
+    logger.info(f"Loaded {len(df)} products for embedding.")
 
-    print(f"--- STRATEGIC DISRUPTION REPORT: {len(anchor_map)} ANCHORS ---\n")
+    # 3. Feature Engineering: Create "Rich Text"
+    # We combine title and features so the model understands the technical context
+    df['combined_text'] = df['title'] + " " + df['features'].apply(lambda x: " ".join(x) if isinstance(x, list) else "")
 
-    for spec_name, amazon_fragment in anchor_map.items():
-        # Identify Anchor Row
-        matches = df[df['title'].str.contains(amazon_fragment, case=False, na=False)]
-        if matches.empty:
-            continue
+    # 4. Model Initialization (SBERT)
+    model = SentenceTransformer('all-MiniLM-L6-v2')
 
-        anchor_idx = matches.index[0]
-        anchor_vector = vectors[anchor_idx].reshape(1, -1)
-        anchor_price = df.iloc[anchor_idx]['price']
+    logger.info("Encoding products to vector space...")
+    embeddings = model.encode(df['combined_text'].tolist(), show_progress_bar=True)
 
-        # 3. Calculation Logic
-        # Calculate Cosine Similarity against all 192 items
-        df['similarity'] = cosine_similarity(anchor_vector, vectors).flatten()
+    # 5. Persistence
+    np.save(output_vectors, embeddings)
+    # Drop the heavy text column before saving the metadata CSV
+    df.drop(columns=['combined_text']).to_csv(output_metadata, index=False)
 
-        # Price Ratio: Percentage of anchor price (Lower is better for a disruptor)
-        df['price_ratio'] = df['price'] / anchor_price
-
-        # Confidence: Penalty for items with < 50 reviews (Market Proof)
-        df['confidence'] = df['rating_number'].apply(lambda x: min(x / 50, 1.0))
-
-        # Weighted Score (60% Tech Similarity, 25% Price Value, 15% Market Trust)
-        df['disruption_score'] = (
-                (df['similarity'] * 0.60) +
-                ((1 - df['price_ratio']) * 0.25) +
-                ((df['average_rating'].fillna(0) / 5.0) * df['confidence'] * 0.15)
-        )
-
-        # 4. Filter for legitimate Disruptors
-        # Must be at least 20% cheaper and have a similarity floor of 0.65
-        disruptors = df[
-            (df.index != anchor_idx) &
-            (df['similarity'] > 0.65) &
-            (df['price'] < (anchor_price * 0.8)) &
-            (df['price'] >= 35.0)  # Quality floor
-            ].sort_values(by='disruption_score', ascending=False)
-
-        print(f"🎯 TARGET ANCHOR: {spec_name} (${anchor_price:.2f})")
-        if not disruptors.empty:
-            top = disruptors.iloc[0]
-            savings = (1 - top['price_ratio']) * 100
-            print(f"   🔥 DISRUPTOR: {top['title'][:60]}...")
-            print(
-                f"   📊 Score: {top['disruption_score']:.3f} | Sim: {top['similarity']:.2f} | Price: ${top['price']} ({savings:.0f}% savings)")
-        else:
-            print("   ❌ No high-value disruptors found meeting the quality threshold.")
-        print("-" * 60)
-
+    logger.info(f"Success! Saved {len(embeddings)} vectors.")
 
 if __name__ == "__main__":
-    run_final_discovery()
+    generate_embeddings()
