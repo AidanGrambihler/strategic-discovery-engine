@@ -1,37 +1,29 @@
-# Python Bytecode & Cache
+# Python internals
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+*.venv/
+venv/
 
-# Jupyter Notebook Checkpoints
-.ipynb_checkpoints/
+# Project Data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
 
-# Virtual Environment
+# Environment & Keys
 .venv/
 venv/
 env/
 .env
-
-# OS Junk
-*.DS_Store
-.recommender/
-
-#Ignore egg-info metadata directory
-*.egg-info/
-
-# Data Rules
-# Ignore the giant file that breaks GitHub
-data/raw/seattle_zip_codes.geojson
-
-# Track the folder structures, but ignore large CSVs if they exceed 50MB
-# (Optional: Add specific large filenames here if needed)
-
-# Keep the History/Log files out of Git
-*.log
-
-# Ignore the virtual environment
-.venv/
+.DS_Store
 __pycache__/
 
-.env
+# Large Binary Files
+*.npy
+*.pth
+*.csv
+
+# Logs
+*.log

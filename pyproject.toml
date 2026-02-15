@@ -3,36 +3,25 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# Shablona Tip: Keep the name consistent with your folder for 'pip install' clarity
-name = "seattle_public_life_analysis"
+name = "strategic_discovery_engine"
 version = "0.1.0"
-description = "Spatial analysis of Digital-to-Social Ratios in Seattle"
+description = "Semantic Market Disruption Analysis for Percussive Tools"
 readme = "README.md"
 authors = [{name = "Aidan Grambihler"}]
-requires-python = ">=3.10" # Updated to support Pandas 3.0/Numpy 2.x
+requires-python = ">=3.10"
 license = {text = "MIT"}
 
-# We use >= here. This is the 'Contract of Compatibility'.
 dependencies = [
-    "pandas>=3.0.0",
-    "numpy>=2.0.0",
-    "geopandas>=1.0.0",
-    "statsmodels>=0.14.0",
-    "libpysal>=4.10.0",
-    "esda>=2.5.0",
-    "matplotlib>=3.8.0",
-    "seaborn>=0.13.0",
-    "scipy>=1.11.0",
-    "patsy>=1.0.0"
+"numpy~=2.4.1",
+"pandas~=3.0.0",
+"sentence-transformers~=5.2.2",
+"scikit-learn~=1.8.0",
+"requests~=2.32.5",
+"beautifulsoup4~=4.14.3",
+"duckdb~=1.4.4",
+"matplotlib~=3.10.8",
+"seaborn~=0.13.2"
 ]
 
-[project.optional-dependencies]
-test = ["pytest>=8.0.0"]
-
-# This tells Python that when someone runs 'dsr-run', it executes your script
 [project.scripts]
-dsr-run = "scripts.07_statistical_modelling:main"
-
-[tool.setuptools]
-# Explicitly find the package even if the name differs from the project name
-packages = ["dsr_analysis", "scripts"]
+run-discovery = "run_pipeline:main"

@@ -1,1 +1,0 @@
-Raw Amazon scrape data and processed vector embeddings are excluded from version control due to size. To regenerate these files, run python src/data/processing/augment_data.py.
