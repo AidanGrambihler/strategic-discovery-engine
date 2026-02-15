@@ -9,40 +9,40 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def generate_embeddings():
-    # 1. Path Setup
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-    input_file = os.path.join(project_root, "data", "processed", "amazon_massage_gun_augmented.jsonl")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.join(base_dir, "../../")
+
+    # Sync with new processing output
+    input_file = os.path.join(project_root, "data", "processed", "final_augmented_market.jsonl")
     output_vectors = os.path.join(project_root, "data", "processed", "product_vectors.npy")
     output_metadata = os.path.join(project_root, "data", "processed", "product_metadata.csv")
 
-    # 2. Load Data
-    items = []
     if not os.path.exists(input_file):
-        logger.error(f"Input file not found at {input_file}")
+        logger.error(f"Source file not found: {input_file}")
         return
 
+    items = []
     with open(input_file, 'r', encoding='utf-8') as f:
         for line in f:
             items.append(json.loads(line))
 
     df = pd.DataFrame(items)
-    logger.info(f"Loaded {len(df)} products for embedding.")
 
-    # 3. Feature Engineering: Create "Rich Text"
-    # We combine title and features so the model understands the technical context
-    df['combined_text'] = df['title'] + " " + df['features'].apply(lambda x: " ".join(x) if isinstance(x, list) else "")
+    # Concatenate title and features for semantic search
+    # Using fillna to ensure string concatenation doesn't fail on nulls
+    titles = df['title'].fillna('')
+    features = df['features'].apply(lambda x: " ".join(x) if isinstance(x, list) else "").fillna('')
+    df['combined_text'] = titles + " " + features
 
-    # 4. Model Initialization (SBERT)
+    # Load transformer model
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
-    logger.info("Encoding products to vector space...")
+    logger.info(f"Generating embeddings for {len(df)} products...")
     embeddings = model.encode(df['combined_text'].tolist(), show_progress_bar=True)
 
-    # 5. Persistence
+    # Save vectors and metadata separately
     np.save(output_vectors, embeddings)
-    # Drop the heavy text column before saving the metadata CSV
     df.drop(columns=['combined_text']).to_csv(output_metadata, index=False)
-
     logger.info(f"Success! Saved {len(embeddings)} vectors.")
 
 if __name__ == "__main__":

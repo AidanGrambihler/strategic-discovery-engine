@@ -5,10 +5,8 @@ import os
 import re
 import logging
 
-# Standard logging for professional status reporting
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
 
 class GoldStandardScraper:
     def __init__(self):
@@ -17,7 +15,7 @@ class GoldStandardScraper:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
-        # Targeted attributes to extract from the comparison matrix
+        # Metrics to pull from the techgearlab comparison matrix
         self.target_attributes = {
             "Measured Amplitude": "amplitude",
             "Measured Stall Force": "stall_force",
@@ -28,8 +26,8 @@ class GoldStandardScraper:
         }
 
     def _clean_price(self, raw_text):
-        """Extracts the first currency pattern found (e.g., '$650')."""
         if not raw_text: return None
+        # Extract first currency pattern ($650)
         match = re.search(r'\$\d+(?:,\d{3})*(?:\.\d{2})?', raw_text)
         return match.group(0) if match else raw_text
 
@@ -43,13 +41,12 @@ class GoldStandardScraper:
             logger.error(f"Failed to fetch page: {e}")
             return []
 
-        # 1. Locate the master comparison table
+        # Find the product comparison table
         table = soup.find('table', id='compare') or soup.find('table', class_=re.compile('compare', re.I))
         if not table:
             logger.error("Comparison table not found in the DOM.")
             return []
 
-        # 2. Map Columns to Product Names
         products = []
         name_containers = table.select('div.compare_product_name')
 
@@ -61,7 +58,7 @@ class GoldStandardScraper:
         num_products = len(products)
         logger.info(f"Detected {num_products} products in the comparison matrix.")
 
-        # 3. Iterate through rows to map metrics back to products
+        # Map row metrics back to the corresponding product column
         rows = table.find_all('tr')
         for row in rows:
             header_cell = row.find(['th', 'td'], class_=re.compile('compare_names', re.I))
@@ -69,8 +66,8 @@ class GoldStandardScraper:
                 continue
 
             header_text = header_cell.get_text(strip=True)
-
             attribute_key = None
+
             for target_name, key in self.target_attributes.items():
                 if target_name.lower() in header_text.lower():
                     attribute_key = key
@@ -88,13 +85,11 @@ class GoldStandardScraper:
         return products
 
     def save(self, data, output_path):
-        # Ensure the directory (data/raw) exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
         with open(output_path, "w", encoding='utf-8') as f:
             count = 0
             for entry in data:
-                # Only save products that actually have scraped specs
+                # Save only if we actually got attributes
                 if len(entry) > 1:
                     f.write(json.dumps(entry) + "\n")
                     count += 1
@@ -102,11 +97,9 @@ class GoldStandardScraper:
 
 
 if __name__ == "__main__":
-    # Dynamically resolve project root: strategic-discovery-engine/
-    # This logic assumes scraper.py is located in src/ingestion/
+    # Resolve project root relative to script location
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.abspath(os.path.join(script_dir, "../../"))
-
     save_path = os.path.join(project_root, "data", "raw", "gold_standards.jsonl")
 
     scraper = GoldStandardScraper()

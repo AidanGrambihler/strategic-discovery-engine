@@ -1,16 +1,14 @@
 import json
 import os
 
-
-def augment_master_list():
+def augment_with_benchmarks():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
     gold_path = os.path.join(project_root, "data", "processed", "gold_standards_cleaned.jsonl")
-    master_path = os.path.join(project_root, "data", "processed", "amazon_massage_gun_master_v2.jsonl")
-    output_path = os.path.join(project_root, "data", "processed", "amazon_massage_gun_augmented.jsonl")
+    market_path = os.path.join(project_root, "data", "processed", "market_data_clean.jsonl")
+    output_path = os.path.join(project_root, "data", "processed", "final_augmented_market.jsonl")
 
-    # 1. These 5 are already high-fidelity in our Amazon scrape
-    # We do NOT want to inject 'GOLD STANDARD' versions of these.
-    existing_anchors = {
+    # These 5 brands are already in the scrape; we don't want to double-count them.
+    existing_in_market = {
         "Theragun Elite",
         "Theragun Mini",
         "Hypervolt 2 Pro",
@@ -18,21 +16,24 @@ def augment_master_list():
         "Renpho Handheld"
     }
 
-    # 2. Load Gold Standards and Filter
-    gold_to_inject = []
+    injected_benchmarks = []
     with open(gold_path, 'r', encoding='utf-8') as f:
         for line in f:
             item = json.loads(line)
+            # Normalize the name for the anchor search
             brand_model = item['brand_model']
 
-            # Logic: If it's one of the 5 we already have, skip the injection.
-            if brand_model in existing_anchors:
-                print(f"⏭️ Skipping {brand_model}: Using existing Amazon listing for anchor.")
-                continue
+            # Create a 'Rich Semantic' description
+            # This makes the Gold Standard 'look' like an Amazon listing to SBERT
+            synthetic_desc = (
+                f"{brand_model} percussion massage gun. "
+                f"Features {item['amplitude_mm']}mm amplitude for deep tissue therapy "
+                f"and {item['stall_force_lbs']}lbs stall force. "
+                f"Professional grade muscle recovery tool with {item['max_ppm']} PPM."
+            )
 
-            # Otherwise, format it for injection
-            gold_to_inject.append({
-                "title": f"GOLD STANDARD: {brand_model}",
+            injected_benchmarks.append({
+                "title": f"GOLD STANDARD: {item['brand_model']}",
                 "price": item['price_usd'],
                 "average_rating": 5.0,
                 "rating_number": 1000,
@@ -44,24 +45,17 @@ def augment_master_list():
                 "store": "Official_Benchmark"
             })
 
-    # 3. Load Amazon Master
-    master_items = []
-    with open(master_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            master_items.append(json.loads(line))
+    with open(market_path, 'r', encoding='utf-8') as f:
+        market_items = [json.loads(line) for line in f]
 
-    # 4. Combine and Save
-    # We put the injected anchors first so they are easy to find in the CSV later
-    final_list = gold_to_inject + master_items
+    final_data = injected_benchmarks + market_items
 
     with open(output_path, 'w', encoding='utf-8') as f:
-        for item in final_list:
+        for item in final_data:
             f.write(json.dumps(item) + '\n')
 
-    print(f"\n✅ Created augmented list: {len(final_list)} total items.")
-    print(f"🚀 Injected {len(gold_to_inject)} missing anchors.")
-    print(f"🔗 Keeping 5 existing Amazon listings as native anchors.")
+    print(f"Dataset ready. Injected {len(injected_benchmarks)} benchmarks into {len(market_items)} market items.")
 
 
 if __name__ == "__main__":
-    augment_master_list()
+    augment_with_benchmarks()

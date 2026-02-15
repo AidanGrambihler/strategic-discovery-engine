@@ -11,6 +11,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.env
 
 # OS Junk
 *.DS_Store
@@ -32,10 +33,5 @@ data/raw/seattle_zip_codes.geojson
 # Ignore the virtual environment
 .venv/
 __pycache__/
-
-# Ignore data files (Professional standard: keep data out of Git)
-data/raw/*
-data/processed/*
-!data/raw/.gitkeep
 
 .env
