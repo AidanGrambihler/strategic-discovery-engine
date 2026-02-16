@@ -17,6 +17,7 @@ data/processed/*
 venv/
 env/
 .env
+.idea
 .DS_Store
 __pycache__/
 
