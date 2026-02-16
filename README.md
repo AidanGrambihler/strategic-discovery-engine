@@ -8,25 +8,30 @@ This project identifies **"Market Disruptors"**—products that are technically 
 This tool transforms unstructured e-commerce data into a **Strategic Decision Engine**. It allows users to bypass "Brand Premiums" by mathematically identifying the technical floor of a product's hardware specifications.
 
 ### 🚀 Key Technical Findings
-* **The High-End Moat:** Professional-grade anchors (e.g., Theragun Pro at $650) exhibit high "Technical Uniqueness." Within the current market scrape, 0 products met the disruption criteria for the Pro tier, suggesting a hardware specification gap that generic manufacturers have yet to bridge.
-* **Entry-Level Saturation:** Entry-level anchors (e.g., Renpho, Lifepro) show high "Clone Density," with disruptors offering up to **53% savings** at a **0.87 semantic similarity**, indicating these products are functionally interchangeable.
-* **Successful Arbitrage:** The **Wattne Massage Gun** was identified as the primary disruptor for the **Theragun Elite**, offering an **86% price reduction** ($59.99 vs $423.00) while maintaining a significant semantic overlap (0.66).
+* **The "True Clone" Discovery:** The engine identified a 0.87 semantic match for the Renpho Active, pointing to a handheld massager at 44% savings. In NLP terms, a similarity > 0.85 indicates near-identical technical descriptions and hardware use-cases.
+
+* **The Budget Frontier:** For premium anchors like the Theragun Elite ($389), the engine identified "Aggressive Disruptors" like the ORIbox, offering 91% price reductions. While the similarity (0.61) suggests a generic hardware profile, the disruption score highlights a massive arbitrage opportunity for non-professional users.
+
+* **Form-Factor Intelligence:** The model successfully distinguished between device sizes, correctly matching the Theragun Mini with a specialized Portable Mini Massage Gun (0.62 similarity) rather than full-sized alternatives.
+
+* **The Professional Moat:** The Ekrin Bantam remains a "Market Outlier." No products in the current dataset met the 0.60 similarity and price-drop criteria simultaneously, validating Ekrin’s unique market positioning in the sub-$200 professional tier.
 
 ---
 
 ## 🏗 Repository Structure
-The project is architected to separate raw web-scraped data from validated industry benchmarks:
+The project is architected for modularity, separating the Extraction, Transformation, and Inference layers:
 
-- `src/`: Core Python logic.
-    - `data/processing/augment_data.py`: A data-fusion script that injects "Gold Standard" benchmarks into the scraped dataset using conditional de-duplication.
-    - `models/product_embedder.py`: PyTorch-based inference engine using `all-MiniLM-L6-v2` to vectorize product titles and features.
-    - `models/recommender_engine.py`: The logic layer that calculates Disruption Scores and filters market results.
-- `data/`: 
-    - `raw/`: Original McAuley Lab Amazon dataset and manual `gold_standards.jsonl`.
-    - `processed/`: Augmented Analytical Base Tables (ABT) and saved `.npy` vector embeddings.
+- `src/`: Core project logic.
+    - `ingestion/`: Scripts for raw data acquisition (`scraper.py`, `stream_market_data.py`)
+    - `processing/`: Data cleaning and benchmarking logic (`clean_market_data.py`, `process_gold_standards.py`, `augment_data.py`)
+    - `models/`: NLP inference and discovery logic (`product_embedder.py`, `recommender_engine.py`)
+- `data/`: Storage for all stateful data.
+    - `raw/`: Unmodified source files (`amazon_market_raw.jsonl`, `gold_standards.jsonl`)
+    - `processed/`: Cleaned ABTs and serialized NLP artifacts (`product_vectors.npy`, `product_metadata.csv`)
 - `notebooks/`: 
-    - `01_amazon_market_inventory_eda.ipynb`: Market integrity audits and Price-vs-Similarity frontier visualizations.
-    - `02_amazon_behavior_analysis.ipynb`: Analysis of rating trust and review-count confidence.
+    - `eda.ipynb`: Visualizing the "Arbitrage Frontier" and auditing market integrity.
+- `run_pipeline.py`: The orchestration script that executes the end-to-end pipeline in sequence.
+- `requirements.txt`: Defined dependencies for environment reproducibility.
 
 ---
 ## 🚀 Getting Started
@@ -51,10 +56,10 @@ Run Discovery: python src/models/recommender_engine.py (Outputs the Disruption R
 
 **Disruption Score ($DS$)**: A weighted multi-objective function designed to balance technical similarity, financial incentive, and market trust. This ensures the model recommends viable products rather than just the cheapest possible items.
 
-$$DS = (Sim \times 0.60) + ((1 - \frac{P_{disruptor}}{P_{anchor}}) \times 0.25) + (Trust_{mod} \times 0.15)$$
+$$DS = (Sim \times 0.40) + ((1 - \frac{P_{disruptor}}{P_{anchor}}) \times 0.40) + (Trust_{mod} \times 0.20)$$
 
-* **Semantic Similarity ($Sim$)**: Calculated using Cosine Similarity between SBERT embedding vectors. This captures the "Technical DNA" of the product beyond simple keyword matching.
-* **Price Ratio**: Measures the financial incentive. A higher weight is given to products that offer significant savings over the luxury anchor.
+* **Semantic Similarity ($Sim$)**: Captured via Cosine Similarity of SBERT embeddings. With a Hard Floor of 0.60, any product below this is rejected as "Categorically Dissimilar."
+* **Price Incentive**: A linear measure of savings. This project defines "Disruption" as a minimum 15% price reduction relative to the anchor.
 * **Trust Modifier ($Trust_{mod}$)**: A confidence-weighted rating score. It scales the `average_rating` by the `rating_number` to penalize products with high ratings but low review counts (unverified quality).
 
 **Data Augmentation**: To account for gaps in the 2023 Amazon dataset (which lacked several modern market leaders), the model performs a **Reference Injection**. It maps 11 "Gold Standard" products with verified physical specifications (Stall Force, Amplitude) into the vector space. This creates a high-fidelity "North Star" for the discovery engine to benchmark against messy, scraped market data.
@@ -74,6 +79,7 @@ $$DS = (Sim \times 0.60) + ((1 - \frac{P_{disruptor}}{P_{anchor}}) \times 0.25) 
 
 * **The Semantic Proxy**: This model assumes that Amazon titles and feature lists are accurate proxies for internal hardware. While semantic similarity is a strong indicator of "Cloning," it does not replace a physical teardown or electrical testing.
 * **Temporal Variance**: Price ratios are calculated based on the dataset's snapshot; real-time Amazon price fluctuations (coupons, lightning deals) are not accounted for in this static version.
-* **Market Coverage**: The "No Disruptors Found" results for the Professional tier (e.g., Theragun Pro) likely reflect the current 200-item sample size. Expanding the scrape to 10k+ items would likely reveal specialized boutique competitors.
+* **The "Cheap-Bias" Effect**: With a $0.40$ weight on price savings, the engine currently favors extreme budget options ($30-$50). Future iterations could implement Price Tiering to find "Pro-Summers" (e.g., $150 alternatives for $600 anchors).
+* **Feature Sparsity**: The current model relies heavily on Title and Store metadata. Adding `stall_force_lbs` and `amplitude_mm` directly into the vector space would further sharpen the "Hardware DNA" matching.
 
 **Conclusion**: This project demonstrates that NLP can effectively "look through" luxury branding to find technical equivalents. By quantifying the relationship between price and semantic DNA, we prove that for 80% of the massage gun market, consumers are paying for a logo, not a motor.

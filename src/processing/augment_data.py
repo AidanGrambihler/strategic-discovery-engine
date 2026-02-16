@@ -35,6 +35,7 @@ def augment_with_benchmarks():
             injected_benchmarks.append({
                 "title": f"GOLD STANDARD: {item['brand_model']}",
                 "price": item['price_usd'],
+                "description": synthetic_desc,
                 "average_rating": 5.0,
                 "rating_number": 1000,
                 "features": [

@@ -55,17 +55,20 @@ def run_discovery_engine():
         # Scaling rating count to prevent 1-review products from skewing results
         df['trust_mod'] = df['rating_number'].apply(lambda x: min(x / 50, 1.0))
 
+        # If similarity is under 0.65, we heavily penalize the score
+        df['sim_penalty'] = df['similarity'].apply(lambda x: 1.0 if x > 0.65 else 0.5)
+
         df['disruption_score'] = (
-                (df['similarity'] * 0.40) +
-                ((1 - df['price_ratio']) * 0.40) +
-                ((df['average_rating'].fillna(0) / 5.0) * df['trust_mod'] * 0.20)
-        )
+            (df['similarity'] * 0.50) +  # Weigh similarity higher
+            ((1 - df['price_ratio']) * 0.30) +  # Weigh savings slightly lower
+            ((df['average_rating'].fillna(0) / 5.0) * df['trust_mod'] * 0.20)
+        ) * df['sim_penalty']
 
         # Filter for candidates: >20% price drop, high similarity, excluding benchmarks
         disruptors = df[
             (df.index != idx) &
             (~df['title'].str.contains("GOLD STANDARD", case=False, na=False)) &
-            (df['similarity'] > 0.50) &
+            (df['similarity'] > 0.60) &
             (df['price'] < (anchor_price * 0.9)) &
             (df['price'] >= 30.0)
             ].sort_values(by='disruption_score', ascending=False)

@@ -28,11 +28,12 @@ def generate_embeddings():
 
     df = pd.DataFrame(items)
 
-    # Concatenate title and features for semantic search
+    # Concatenate title, features, and description for semantic search
     # Using fillna to ensure string concatenation doesn't fail on nulls
     titles = df['title'].fillna('')
     features = df['features'].apply(lambda x: " ".join(x) if isinstance(x, list) else "").fillna('')
-    df['combined_text'] = titles + " " + features
+    descriptions = df['description'].apply(lambda x: " ".join(x) if isinstance(x, list) else str(x) if pd.notnull(x) else "")
+    df['combined_text'] = titles + " " + features + " " + descriptions
 
     # Load transformer model
     model = SentenceTransformer('all-MiniLM-L6-v2')
