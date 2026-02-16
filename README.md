@@ -40,17 +40,23 @@ The project is architected for modularity, separating the Extraction, Transforma
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Pipeline Execution
-Run the pipeline to generate the vector space and discovery report:
+### 2. Full Pipeline Execution
+The entire discovery engine, from raw data ingestion to NLP vectorization, is orchestrated via a single entry point. This ensures data consistency across the processing layers.
 
-Augment Data: python src/data/processing/augment_data.py (Fuses benchmarks with market data).
+```bash
+python run_pipeline.py
+```
 
-Generate Embeddings: python src/models/product_embedder.py (Creates the vector space).
+### 3. Modular Execution
+If you wish to run specific stages of the pipeline independently, you can call the sub-modules directly:
 
-Run Discovery: python src/models/recommender_engine.py (Outputs the Disruption Report).
+* Ingestion: `python src/ingestion/scraper.py`
+* Refinement: `python src/processing/augment_data.py`
+* Inference: `python src/models/recommender_engine.py`
 
 ## 📊 Methodology & Metrics
 
